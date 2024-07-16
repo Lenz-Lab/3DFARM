@@ -1,4 +1,4 @@
-function [all_aligned_nodes] = icp_all(all_bone_indx, combined_nodes, side_indx)
+function [all_aligned_nodes, RTs] = icp_all(all_bone_indx, combined_nodes, side_indx)
 % This function aligned the user input bone to a predefined template bone.
 % It requires the bone index bone to identify which bone was chosen
 % (bone_indx), the bone nodal points (nodes), the coordinate system chosen
@@ -68,14 +68,8 @@ for n = 1:length(all_bone_indx)
         a = 3;
     end
 
-
-    % if side_indx == 2
-    %     nodes_temp = TR_template.Points .* [-1,1,1];
-    %     con_temp = [TR_template.ConnectivityList(:,3), TR_template.ConnectivityList(:,2), TR_template.ConnectivityList(:,1)];
-    % else
-        nodes_temp = TR_template.Points;
-        con_temp = TR_template.ConnectivityList;
-    % end
+    nodes_temp = TR_template.Points;
+    con_temp = TR_template.ConnectivityList;
 
     % Append nodes and faces with offsets
     nodes_template = [nodes_template; nodes_temp];
@@ -327,9 +321,9 @@ elseif parttib_multiplier > 1 && tibfib_switch == 2 && all(all_bone_indx >= 13)
     all_aligned_nodes = all_aligned_nodes/parttib_multiplier;
 end
 
-% if side_indx == 1
-%     all_aligned_nodes = all_aligned_nodes .* [-1,1,1];
-% end
+RTs.iflip = iflip;
+RTs.iR = iR;
+RTs.iT = iT;
 
 %% Visualize proper alignment
 figure()

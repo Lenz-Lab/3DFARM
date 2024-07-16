@@ -16,20 +16,28 @@ clear, clc, close all
 % process. I recommend a file name similar to this for ease:
 % group_#_bone_laterality.stl (ex. ABC_01_Tibia_Right.stl)
 
-% Determine the files in the folder selected
-FolderPathName = uigetdir('*.*', 'Select folder with your bones');
-files = dir(fullfile(FolderPathName, '*.*'));
-files = files(~ismember({files.name},{'.','..'}));
-
-temp = strfind(FolderPathName,'\');
-FolderName = FolderPathName(temp(end)+1:end); % Extracts the folder name selected
-
-%% Load all files into list
-temp = struct2cell(files);
-list_files = temp(1,:);
-
-% Select the models that you want a coordinate system of
-[files_indx,~] = listdlg('PromptString',[{'Select all of your bones for 1 foot and ankle'} {''}], 'ListString', list_files, 'SelectionMode','multiple');
+% % Determine the files in the folder selected
+% FolderPathName = uigetdir('*.*', 'Select folder with your bones');
+% files = dir(fullfile(FolderPathName, '*.*'));
+% files = files(~ismember({files.name},{'.','..'}));
+% 
+% temp = strfind(FolderPathName,'\');
+% FolderName = FolderPathName(temp(end)+1:end); % Extracts the folder name selected
+% 
+% %% Load all files into list
+% temp = struct2cell(files);
+% list_files = temp(1,:);
+% 
+% % Select the models that you want a coordinate system of
+% [files_indx,~] = listdlg('PromptString',[{'Select all of your bones for 1 foot and ankle or spreadsheet'} {''}], 'ListString', list_files, 'SelectionMode','multiple');
+% all_files = list_files(files_indx)';
+% 
+% FileName = char(all_files(m));
+% [~,name,ext] = fileparts(FileName);
+% 
+% if
+[main_sheet, folder_path] = uigetfile('*.xlsx*',"Please select your FARM sheet ");
+addpath(folder_path)
 
 all_files = list_files(files_indx)'; % stores all files selected
 
@@ -117,7 +125,31 @@ for m = 1:length(all_files)
     end
 end
 
-all_aligned_nodes = icp_all(all_bone_indx, combined_nodes, side_indx);
+%%
+
+if ismember(1, all_bone_indx)
+    n = find(1 == all_bone_indx);
+    metadata = bone_metadata{n};
+
+    % Extract the corresponding nodes and faces for this bone
+    start_node = metadata.start_node;
+    end_node = metadata.end_node;
+    start_face = metadata.start_face;
+    end_face = metadata.end_face;
+
+    % Extract the nodes and faces
+    temp_talus_nodes = combined_nodes(start_node:end_node, :);
+
+    [~, RTs] = icp_all(1, temp_talus_nodes, side_indx);
+
+    combined_nodes = combined_nodes*RTs.iflip;
+
+    all_aligned_nodes = (RTs.iR*(combined_nodes') + repmat(RTs.iT,1,length(combined_nodes')))';
+else
+    error('You must include the talus, even if you arent analyzing it')
+end
+
+% all_aligned_nodes = icp_all(all_bone_indx, combined_nodes, side_indx);
 
 figure()
 plot3(combined_nodes(:,1),combined_nodes(:,2),combined_nodes(:,3),'.k')
