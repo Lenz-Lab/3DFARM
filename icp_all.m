@@ -14,6 +14,15 @@ nodes_template = [];
 con_template = [];
 offset = 0; % To handle indexing for faces
 
+if side_indx == 2
+    combined_nodes = combined_nodes .* [-1,1,1];
+end
+
+% figure()
+% plot3(combined_nodest(:,1),combined_nodest(:,2),combined_nodest(:,3),'.k')
+% axis equal
+
+
 for n = 1:length(all_bone_indx)
     if all_bone_indx(n) == 1
         TR_template = stlread('Talus.stl');
@@ -60,13 +69,13 @@ for n = 1:length(all_bone_indx)
     end
 
 
-    if side_indx == 2
-        nodes_temp = TR_template.Points * [1,1,-1];
-        con_temp = [TR_template.ConnectivityList(:,3), TR_template.ConnectivityList(:,2), TR_template.ConnectivityList(:,1)];
-    else
+    % if side_indx == 2
+    %     nodes_temp = TR_template.Points .* [-1,1,1];
+    %     con_temp = [TR_template.ConnectivityList(:,3), TR_template.ConnectivityList(:,2), TR_template.ConnectivityList(:,1)];
+    % else
         nodes_temp = TR_template.Points;
         con_temp = TR_template.ConnectivityList;
-    end
+    % end
 
     % Append nodes and faces with offsets
     nodes_template = [nodes_template; nodes_temp];
@@ -159,7 +168,7 @@ end
 % Two different icp approaches are used, the first includeds the faces and
 % the second is just the points.
 
-iterations = 200;
+iterations = 50;
 [R1,T1,ER1] = icp(nodes_template',combined_nodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp);
 [R1_0,T1_0,ER1_0] = icp(nodes_template',combined_nodes', iterations,'Matching','kDtree','WorstRejection',0.1);
 
@@ -318,9 +327,9 @@ elseif parttib_multiplier > 1 && tibfib_switch == 2 && all(all_bone_indx >= 13)
     all_aligned_nodes = all_aligned_nodes/parttib_multiplier;
 end
 
-if side_indx == 2
-    all_aligned_nodes = all_aligned_nodes * [1,1,-1];
-end
+% if side_indx == 1
+%     all_aligned_nodes = all_aligned_nodes .* [-1,1,1];
+% end
 
 %% Visualize proper alignment
 figure()

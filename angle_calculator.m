@@ -11,12 +11,14 @@ patch('Faces',bone1.ConnectivityList,'Vertices',bone1.Points,...
     'EdgeColor','none',...
     'FaceLighting','gouraud',...
     'AmbientStrength', 0.15);
+alpha(0.5)
 hold on
 patch('Faces',bone2.ConnectivityList,'Vertices',bone2.Points,...
     'FaceColor', [0.85 0.85 0.85], ...
     'EdgeColor','none',...
     'FaceLighting','gouraud',...
     'AmbientStrength', 0.15);
+alpha(0.5)
 view(viewv)
 camlight HEADLIGHT
 material('dull');
@@ -33,7 +35,7 @@ angle = ang_bet(startA, endA, startB, endB, plane);
 
 
     function plot_arrow(origin, direction, color)
-        dir_normalized = 200 * (direction - origin) / norm(direction - origin);
+        dir_normalized = 50 * (direction - origin) / norm(direction - origin);
         arrow(origin, origin + dir_normalized, 'FaceColor', color, 'EdgeColor', color, 'LineWidth', 2, 'Length', 7);
     end
 

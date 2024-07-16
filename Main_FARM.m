@@ -24,7 +24,6 @@ files = files(~ismember({files.name},{'.','..'}));
 temp = strfind(FolderPathName,'\');
 FolderName = FolderPathName(temp(end)+1:end); % Extracts the folder name selected
 
-
 %% Load all files into list
 temp = struct2cell(files);
 list_files = temp(1,:);
@@ -122,8 +121,11 @@ all_aligned_nodes = icp_all(all_bone_indx, combined_nodes, side_indx);
 
 figure()
 plot3(combined_nodes(:,1),combined_nodes(:,2),combined_nodes(:,3),'.k')
-hold on
-plot3(all_aligned_nodes(:,1),all_aligned_nodes(:,2),all_aligned_nodes(:,3),'.r')
+axis equal
+
+
+figure()
+plot3(all_aligned_nodes(:,1),all_aligned_nodes(:,2),all_aligned_nodes(:,3),'.k')
 axis equal
 
 % Iterate through each bone in bone_metadata to separate and save
@@ -155,279 +157,67 @@ for n = 1:length(bone_metadata)
 
     bonestl.(field_name) = TR_bone;
 
-    % Perform the AAFACT calculation
-    out.(field_name) = AAFACT_calculation(TR_bone, metadata.bone_indx, metadata.side_indx);
+    if metadata.bone_indx == 1 || metadata.bone_indx == 2 || metadata.bone_indx == 13
+        % Perform the AAFACT calculation
+        out.(field_name) = AAFACT_calculation(TR_bone, metadata.bone_indx, 1);
+    end
 end
 
 if ismember(1,all_bone_indx) && ismember(2,all_bone_indx)
-    angle = angle_calculator(out.Talus(7,:), out.Talus(8,:), out.Calcaneus(7,:), out.Calcaneus(8,:), bonestl.Talus, bonestl.Calcaneus, "yz");
+    angles.TCA = angle_calculator(out.Talus(7,:), out.Talus(8,:), out.Calcaneus(7,:), out.Calcaneus(8,:), bonestl.Talus, bonestl.Calcaneus, "yz");
+else
+    angles.TCA = NaN;
 end
 
-%% TCA
-
-    startA = ST_talus_ACS(1,:);
-endA = ST_talus_ACS(2,:);
-startB = ST_calcaneus_ACS(1,:);
-endB = ST_calcaneus_ACS(2,:);
-
-figure()
-patch('Faces',talus.ConnectivityList,'Vertices',talus.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-hold on
-patch('Faces',calcaneus.ConnectivityList,'Vertices',calcaneus.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-view([90 0])
-camlight HEADLIGHT
-material('dull');
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-
-TCA_angle_between = ang_bet(startA, endA, startB, endB, "yz")
-
-
-%% MDTA
-startA = MDTA(1,:);
-endA = MDTA(2,:);
-startB = tibia_ACS(1,:);
-endB = tibia_ACS(3,:);
-
-figure()
-patch('Faces',tibia.ConnectivityList,'Vertices',tibia.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-hold on
-view([0 0])
-camlight HEADLIGHT
-material('dull');
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-
-MDTA_angle_between = ang_bet(startA, endA, startB, endB,"xz")
-
-%% TTA
-startA = tibia_ACS(1,:);
-endA = tibia_ACS(4,:);
-startB = TT_talus_ACS(1,:);
-endB = TT_talus_ACS(4,:);
-
-figure()
-patch('Faces',tibia.ConnectivityList,'Vertices',tibia.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-hold on
-patch('Faces',talus.ConnectivityList,'Vertices',talus.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-view([0 0])
-camlight HEADLIGHT
-material('dull');
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-
-TTA_angle_between = ang_bet(startA, endA, startB, endB,"xz")
-
-%% SVA
-startA = tibia_ACS(1,:);
-endA = tibia_ACS(3,:);
-startB = SVA(1,:);
-endB = tibia_ACS(1,:);
-
-figure()
-patch('Faces',tibia.ConnectivityList,'Vertices',tibia.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-hold on
-patch('Faces',calcaneus.ConnectivityList,'Vertices',calcaneus.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-view([-180 20])
-camlight HEADLIGHT
-material('dull');
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-
-SVA_angle_between = ang_bet(startA, endA, startB, endB, "xz")
-
-%% TCA
-startA = ST_talus_ACS(1,:);
-endA = ST_talus_ACS(2,:);
-startB = ST_calcaneus_ACS(1,:);
-endB = ST_calcaneus_ACS(2,:);
-
-figure()
-patch('Faces',talus.ConnectivityList,'Vertices',talus.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-hold on
-patch('Faces',calcaneus.ConnectivityList,'Vertices',calcaneus.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-view([90 0])
-camlight HEADLIGHT
-material('dull');
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-
-TCA_angle_between = ang_bet(startA, endA, startB, endB, "yz")
-
-%% CIA
-startA = CC_calcaneus_ACS(1,:);
-endA = [CC_calcaneus_ACS(1,1), CC_calcaneus_ACS(1,2)-1, CC_calcaneus_ACS(1,3)];
-startB = CC_calcaneus_ACS(1,:);
-endB = CC_calcaneus_ACS(2,:);
-
-figure()
-patch('Faces',calcaneus.ConnectivityList,'Vertices',calcaneus.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-hold on
-view([90 0])
-camlight HEADLIGHT
-material('dull');
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-
-CIA_angle_between = ang_bet(startA, endA, startB, endB, "yz")
-
-%% TLSA
-startA = TLSA(1,:);
-endA = TLSA(2,:);
-startB = tibia_ACS(1,:);
-endB = tibia_ACS(3,:);
-
-figure()
-patch('Faces',tibia.ConnectivityList,'Vertices',tibia.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-hold on
-view([-90 0])
-camlight HEADLIGHT
-material('dull');
-axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
-
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
-
-
-TLSA_angle_between = ang_bet(startA, endA, startB, endB,"yz")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% Write the combined STL
-% stlwrite('combined_model.stl', combined_faces, combined_nodes);
-
-% Save metadata for splitting later
-% save('bone_metadata.mat', 'bone_metadata', 'combined_nodes', 'combined_faces');
-
-% List of all possible measurements and their required bones
-measurements = {
-    'Calcaneal Inclination Angle', [2]
-    'Medial Distal Tibial Angle', [13]
-    'Saltzman 20 degree', [2, 13]
-    'Talar Tilt Angle', [1, 13]
-    'Talocalcaneal Angle', [1, 2]
-    'Tibial Lateral Surface Angle', [13]
-};
-
-% Create a mask to filter measurements based on available bones
-mask = cellfun(@(x) all(ismember(x, all_bone_indx)), measurements(:,2));
-
-% Filter the measurements list
-filtered_measurements = measurements(mask, 1);
-list_measure = horzcat(filtered_measurements)';
-
-% Prompt the user to select measurements
-[measure_indx, ~] = listdlg('PromptString', {'Which angles do you want?'}, ...
-                             'ListString', list_measure, ...
-                             'SelectionMode', 'multiple');
-
-% Map selected indices back to the original measurements
-original_measure_indx = find(mask);
-selected_measurements = original_measure_indx(measure_indx);
-
-
-
-
-
-
-
+if ismember(2,all_bone_indx)
+    angles.CIA = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2)-1, out.Calcaneus(1,3)], out.Calcaneus(1,:), out.Calcaneus(2,:), bonestl.Calcaneus, bonestl.Calcaneus, "yz");
+else
+    angles.CIA = NaN;
+end
+
+if ismember(1,all_bone_indx) && ismember(13,all_bone_indx)
+    angles.TTA = angle_calculator(out.Tibia(1,:), out.Tibia(6,:), out.Talus(1,:), out.Talus(6,:), bonestl.Tibia, bonestl.Talus, "xz");
+else
+    angles.TTA = NaN;
+end
+
+if ismember(2,all_bone_indx) && ismember(13,all_bone_indx)
+    angles.SVA = angle_calculator(out.Tibia(1,:), out.Tibia(4,:), out.Calcaneus(13,:), out.Tibia(1,:), bonestl.Tibia, bonestl.Calcaneus, "xz");
+else
+    angles.SVA = NaN;
+end
+
+if ismember(13,all_bone_indx)
+    angles.MDTA = angle_calculator(out.Tibia(7,:), out.Tibia(8,:), out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "xz");
+else
+    angles.MDTA = NaN;
+end
+
+if ismember(13,all_bone_indx)
+    angles.TLSA = angle_calculator(out.Tibia(9,:), out.Tibia(10,:), out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "yz");
+else
+    angles.TLSA = NaN;
+end
+
+%% Save Angles
+A = [
+    "Talocalcaneal Angle",
+    "Calcaneal Inclination Angle",
+    "Talar Tilt Angle",
+    "Saltzman 20 degree",
+    "Medial Distal Tibial Angle",
+    "Tibial Lateral Surface Angle"
+    ];
+
+if length(name) > 31
+    name = name(1:31);
+end
+
+fields = fieldnames(angles);
+for i=1:length(fields)
+    values(i,1) = getfield(angles,fields{i});
+end
+
+xlfilename = strcat(FolderPathName,'\Radiograph_Measurements_',FolderName,'.xlsx');
+writematrix(A,xlfilename,'Sheet',name);
+writematrix(values,xlfilename,'Sheet',name,'Range','B1')
