@@ -1,4 +1,4 @@
-function [all_aligned_nodes, RTs] = icp_all(all_bone_indx, combined_nodes, side_indx)
+function [all_aligned_nodes, RTs] = icp_all(all_bone_indx, combined_nodes)
 % This function aligned the user input bone to a predefined template bone.
 % It requires the bone index bone to identify which bone was chosen
 % (bone_indx), the bone nodal points (nodes), the coordinate system chosen
@@ -14,13 +14,9 @@ nodes_template = [];
 con_template = [];
 offset = 0; % To handle indexing for faces
 
-if side_indx == 2
-    combined_nodes = combined_nodes .* [-1,1,1];
-end
-
-% figure()
-% plot3(combined_nodest(:,1),combined_nodest(:,2),combined_nodest(:,3),'.k')
-% axis equal
+% if side_indx == 2
+%     combined_nodes = combined_nodes .* [-1,1,1];
+% end
 
 
 for n = 1:length(all_bone_indx)
@@ -75,6 +71,11 @@ for n = 1:length(all_bone_indx)
     nodes_template = [nodes_template; nodes_temp];
     con_template = [con_template; con_temp + offset];
     offset = offset + size(nodes_temp, 1);
+
+    figure()
+    plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.b')
+    axis equal
+
 end
 
 %% Adjusting the cropped/smaller models
@@ -326,11 +327,11 @@ RTs.iR = iR;
 RTs.iT = iT;
 
 %% Visualize proper alignment
-figure()
-    plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
-hold on
-plot3(all_aligned_nodes(:,1),all_aligned_nodes(:,2),all_aligned_nodes(:,3),'.b')
-xlabel('X')
-ylabel('Y')
-zlabel('Z')
-axis equal
+% figure()
+%     plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
+% hold on
+% plot3(all_aligned_nodes(:,1),all_aligned_nodes(:,2),all_aligned_nodes(:,3),'.b')
+% xlabel('X')
+% ylabel('Y')
+% zlabel('Z')
+% axis equal
