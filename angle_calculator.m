@@ -3,6 +3,8 @@ if plane == "yz"
     viewv = [90 0];
 elseif plane == "xz"
     viewv = [0 0];
+else
+    viewv = [90 90];
 end
 
 figure()
@@ -23,9 +25,11 @@ view(viewv)
 camlight HEADLIGHT
 material('dull');
 axis equal
-xlabel('x')
-ylabel('y')
-zlabel('z')
+axis off
+set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
+% xlabel('x')
+% ylabel('y')
+% zlabel('z')
 
 plot_arrow(startA, endA, [0 0 1]);
 plot_arrow(startB, endB, [1 0 0]);
