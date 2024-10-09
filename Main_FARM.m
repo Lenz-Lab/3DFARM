@@ -1,13 +1,13 @@
 %% Main Script for 3D Foot and Ankle Radiographic Measurements
 clear, clc, close all
 
-% This main code requires the spreadsheet with bone file names, and the 
+% This main code requires the spreadsheet with bone file names, and the
 % talus must be one of those bones.
 
 % The talus is required regardless of measurement to ensure proper
 % consistent alignment.
 
-% Ensure that there are no spaces in the folder name, consider replacing 
+% Ensure that there are no spaces in the folder name, consider replacing
 % spaces with underscores (_).
 
 % While it's not neccessary, naming your file with the laterality (_L_ or
@@ -61,19 +61,19 @@ for col = 1:width(data)
     stl_files = data{2:end, col};
     stl_files = stl_files(~cellfun('isempty', stl_files)); % Remove empty cells
 
-    % Initialize storage for combined STL
-    combined_nodes = [];
-    combined_faces = [];
-    offset = 0; % To handle indexing for faces
-    bone_metadata = {}; % To store bone metadata
+    % Check if the word "talus" is present in any cell
+    isTalusPresent = any(cellfun(@(x) contains(x, 'talus', 'IgnoreCase', true), stl_files));
+
+    % If "talus" is not found, display an error message
+    if ~isTalusPresent
+        error('You must include the talus, even if you aren''t analyzing it');
+    end
 
     % Iterate through each STL file for the current person
     for file_idx = 1:length(stl_files)
-        clear bone_indx 
+        clear bone_indx
         FileName = char(stl_files{file_idx});
         [~, ~, ext] = fileparts(FileName);
-        % disp(name)
-        % name_original = name;
 
         % Looks through the file name for the bone name
         if ~exist('bone_indx', 'var')
@@ -90,8 +90,7 @@ for col = 1:width(data)
             [bone_indx, ~] = listdlg('PromptString', [{strcat('Select which bone this file is:', " ", string(FileName))} {''}], 'ListString', list_bone, 'SelectionMode', 'single');
         end
 
-        % If the folder doesn't have the bone side, this looks through the file
-        % name for the bone side
+        % Looks through the file name for the bone laterality
         if ~exist('side_folder_indx', 'var')
             for n = 1:length(list_side_folder)
                 if contains(lower(FileName), lower(list_side_folder{n}))
@@ -118,88 +117,40 @@ for col = 1:width(data)
             nodes = TR.Points;
             conlist = TR.ConnectivityList;
 
-            % Append nodes and faces with offsets
-            combined_nodes = [combined_nodes; nodes];
-            combined_faces = [combined_faces; conlist + offset];
-            offset = offset + size(nodes, 1);
+            if side_indx == 1
+                bone_nodes = nodes .* [1,1,-1];
+                bone_faces = [conlist(:,3) conlist(:,2) conlist(:,1)];
+            else
+                bone_nodes = nodes;
+                bone_faces = conlist;
+            end
 
-            % Store metadata
-            bone_metadata{end+1} = struct('name', ind_name, 'bone_indx', bone_indx, 'side_indx', side_indx, ...
-                'start_node', offset - size(nodes, 1) + 1, 'end_node', offset, ...
-                'start_face', size(combined_faces, 1) - size(conlist, 1) + 1, 'end_face', size(combined_faces, 1));
+            bone_name = list_bone{bone_indx};
+
+            % Define the field name for the structure
+            field_name = sprintf('%s', bone_name);
+
+            % Create a triangulation object for the bone
+            TR_bone = triangulation(bone_faces, bone_nodes);
+
+            bonestl.(field_name) = TR_bone;
+
         else
             disp('This is not an acceptable file type at this time, please choose either a ".stl" file type.')
             return
         end
-    end
 
-    % figure()
-    % plot3(combined_nodes(:,1),combined_nodes(:,2),combined_nodes(:,3),'.k')
-    % axis equal
+        % if ~ismember(1, all_bone_indx)
+        %     error('You must include the talus, even if you arent analyzing it')
+        % end
 
-    if side_indx == 1
-        combined_nodes = combined_nodes .* [-1,1,1];
-    end
-
-    if ismember(1, all_bone_indx)
-        n = find(1 == all_bone_indx);
-        metadata = bone_metadata{n};
-
-        % Extract the corresponding nodes and faces for this bone
-        start_node = metadata.start_node;
-        end_node = metadata.end_node;
-        start_face = metadata.start_face;
-        end_face = metadata.end_face;
-
-        % Extract the nodes and faces
-        temp_talus_nodes = combined_nodes(start_node:end_node, :);
-
-        [~, RTs] = icp_all(1, temp_talus_nodes);
-
-        combined_nodes = combined_nodes*RTs.iflip;
-
-        all_aligned_nodes = (RTs.iR*(combined_nodes') + repmat(RTs.iT,1,length(combined_nodes')))';
-    else
-        error('You must include the talus, even if you arent analyzing it')
-    end
-
-    % all_aligned_nodes = icp_all(all_bone_indx, combined_nodes, side_indx);
-
-    % Iterate through each bone in bone_metadata to separate and save
-    for n = 1:length(bone_metadata)
-        % Get the metadata for the current bone
-        metadata = bone_metadata{n};
-
-        % Extract the corresponding nodes and faces for this bone
-        start_node = metadata.start_node;
-        end_node = metadata.end_node;
-        start_face = metadata.start_face;
-        end_face = metadata.end_face;
-
-        % Extract the nodes and faces
-        bone_nodes = all_aligned_nodes(start_node:end_node, :);
-        bone_faces = combined_faces(start_face:end_face, :);
-
-        % Adjust face indices to start from 1
-        bone_faces = bone_faces - (start_node - 1);
-
-        % Define the bone name and its index
-        bone_indx = metadata.bone_indx;
-        bone_name = list_bone{bone_indx};
-
-        % Define the field name for the structure
-        field_name = sprintf('%s', bone_name);
-
-        % Create a triangulation object for the bone
-        TR_bone = triangulation(bone_faces, bone_nodes);
-
-        bonestl.(field_name) = TR_bone;
-
+        % for n = 1:length(all_bone_indx)
         if bone_indx == 1 || bone_indx == 2 || bone_indx == 13
             % Perform the AAFACT calculation
-            out.(field_name) = AAFACT_calculation(TR_bone, bone_indx, 2);
+            out.(field_name) = AAFACT_calculation(bonestl.(field_name), bone_indx, 2);
         end
     end
+
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx)
         angles.TCA = angle_calculator(out.Talus(7,:), out.Talus(8,:), out.Calcaneus(7,:), out.Calcaneus(8,:), bonestl.Talus, bonestl.Calcaneus, "yz");
@@ -209,6 +160,10 @@ for col = 1:width(data)
 
     if ismember(2,all_bone_indx)
         angles.CIA = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2)+1, out.Calcaneus(1,3)], out.Calcaneus(1,:), out.Calcaneus(2,:), bonestl.Calcaneus, bonestl.Calcaneus, "yz");
+        if angles.CIA > 120
+            close(gcf);
+            angles.CIA = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2)-1, out.Calcaneus(1,3)], out.Calcaneus(1,:), out.Calcaneus(2,:), bonestl.Calcaneus, bonestl.Calcaneus, "yz");
+        end
     else
         angles.CIA = NaN;
     end
@@ -256,8 +211,7 @@ for col = 1:width(data)
         values(i,1) = getfield(angles,fields{i});
     end
 
-    xlfilename = strcat(folder_path,'\Radiograph_Measurements_', FolderName, '.xlsx');
+    xlfilename = strcat(folder_path,'Radiograph_Measurements_', FolderName, '.xlsx');
     writematrix(A,xlfilename,'Sheet',ind_name);
     writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
-
 end
