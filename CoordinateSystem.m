@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 
@@ -136,6 +136,7 @@ end
 
 % Positive X nth ROI MDTA
 nth_x = range_x/4;
+
 positive_x_nth = x_max - nth_x;
 
 positive_x_nth_ROI = (aligned_nodes(:,1) >= positive_x_nth) & (aligned_nodes(:,3) <= 0);
@@ -161,6 +162,123 @@ if vis == 1
     zlabel('Z')
     axis equal
 end
+
+%% Just for Hindfoot Frontal
+
+av_positive_z_nth_hindfront = [NaN NaN NaN];
+
+% Initial values
+divider_x = 5;  % Starting divider for range_x
+divider_y = n;  % Starting divider for range_y
+
+% Loop until we have no NaNs in av_positive_z_nth_hindfront
+while any(isnan(av_positive_z_nth_hindfront))
+    
+    % Calculate nth_z and nth_y with the current dividers
+    nth_z = range_x / divider_x;
+    nth_y = range_y / divider_y;
+
+    positive_z_nth = z_max - nth_z;
+    negative_y_nth = y_min + nth_y;
+
+    positive_z_nth_ROI = aligned_nodes(:,3) >= positive_z_nth;
+    negative_y_nth_ROI = aligned_nodes(:,2) <= negative_y_nth;
+
+    positive_z_nth_x = nonzeros(aligned_nodes(:,1) .* positive_z_nth_ROI .* negative_y_nth_ROI);
+    positive_z_nth_y = nonzeros(aligned_nodes(:,2) .* positive_z_nth_ROI .* negative_y_nth_ROI);
+    positive_z_nth_z = nonzeros(aligned_nodes(:,3) .* positive_z_nth_ROI .* negative_y_nth_ROI);
+
+    av_positive_z_nth_x = mean(positive_z_nth_x);
+    av_positive_z_nth_y = mean(positive_z_nth_y);
+    av_positive_z_nth_z = mean(positive_z_nth_z);
+
+    av_positive_z_nth_hindfront = [av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z];
+
+    % Check if all values are no longer NaN, exit if true
+    if ~any(isnan(av_positive_z_nth_hindfront))
+        break;
+    end
+
+    % Systematically decrement dividers
+    divider_x = divider_x - 1;
+    divider_y = divider_y - 1;
+
+    % Stop if dividers become too small to avoid division errors
+    if divider_x < 1 || divider_y < 1
+        error('Could not find valid values. Dividers became too small.');
+    end
+    
+    % % Optional Visualization
+    % if vis == 1
+    %     figure()
+    %     plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
+    %     hold on
+    %     plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
+    %     plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
+    %     xlabel('X')
+    %     ylabel('Y')
+    %     zlabel('Z')
+    %     axis equal
+    % end
+end
+
+av_negative_z_nth_hindfront = [NaN NaN NaN];
+
+% Initial values
+divider_x = 5;  % Starting divider for range_x
+divider_y = n;  % Starting divider for range_y
+
+% Loop until we have no NaNs in av_positive_z_nth_hindfront
+while any(isnan(av_negative_z_nth_hindfront))
+    
+    % Calculate nth_z and nth_y with the current dividers
+    nth_z = range_x / divider_x;
+    nth_y = range_y / divider_y;
+
+    negative_z_nth = z_min + nth_z;
+    negative_y_nth = y_min + nth_y;
+
+    negative_z_nth_ROI = aligned_nodes(:,3) <= negative_z_nth;
+    negative_y_nth_ROI = aligned_nodes(:,2) <= negative_y_nth;
+
+    negative_z_nth_x = nonzeros(aligned_nodes(:,1).*negative_z_nth_ROI.*negative_y_nth_ROI);
+    negative_z_nth_y = nonzeros(aligned_nodes(:,2).*negative_z_nth_ROI.*negative_y_nth_ROI);
+    negative_z_nth_z = nonzeros(aligned_nodes(:,3).*negative_z_nth_ROI.*negative_y_nth_ROI);
+
+    av_negative_z_nth_x = mean(negative_z_nth_x);
+    av_negative_z_nth_y = mean(negative_z_nth_y);
+    av_negative_z_nth_z = mean(negative_z_nth_z);
+
+    av_negative_z_nth_hindfront = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z];
+
+    % Check if all values are no longer NaN, exit if true
+    if ~any(isnan(av_negative_z_nth_hindfront))
+        break;
+    end
+
+    % Systematically decrement dividers
+    divider_x = divider_x - 1;
+    divider_y = divider_y - 1;
+
+    % Stop if dividers become too small to avoid division errors
+    if divider_x < 1 || divider_y < 1
+        error('Could not find valid values. Dividers became too small.');
+    end
+    
+    % % Optional Visualization
+    % if vis == 1
+    %     figure()
+    %     plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
+    %     hold on
+    %     plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
+    %     plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
+    %     xlabel('X')
+    %     ylabel('Y')
+    %     zlabel('Z')
+    %     axis equal
+    % end
+end
+
 
 %% Split up for ACS
 nth_x = range_x/n;
@@ -353,14 +471,19 @@ if bone_indx == 13
     TLSA = [av_negative_y_nth_tlsa; av_positive_y_nth_tlsa];
 else
     MDTA = [0,0,0; 0,0,0];
-    TLSA = MDTA;
+    TLSA = [0,0,0; 0,0,0];
 end
+
+SVA = [0, 0, 0];
+HindFront = [0, 0, 0; 0, 0, 0];
 
 if bone_indx == 2
     SVA = av_negative_z_nth;
-else
-    SVA = [0,0,0];
+    if bone_coord == 1
+        HindFront = [av_negative_z_nth_hindfront; av_positive_z_nth_hindfront];
+    end
 end
+
 
 origin = [0,0,0];
 
