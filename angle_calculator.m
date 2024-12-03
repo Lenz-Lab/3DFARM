@@ -3,6 +3,8 @@ if plane == "yz"
     viewv = [90 0];
 elseif plane == "xz"
     viewv = [0 0];
+elseif plane == "xy"
+    viewv = [0 90];
 end
 
 figure()

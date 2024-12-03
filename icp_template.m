@@ -431,7 +431,7 @@ RTs.cm_meta = cm_meta; % centering metatarsals cm_meta
 RTs.red = [];
 RTs.yellow = [];
 
-%% Visualize proper alignment
+% %% Visualize proper alignment
 % figure()
 % if bone_indx == 1 && bone_coord >= 2
 %     plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')

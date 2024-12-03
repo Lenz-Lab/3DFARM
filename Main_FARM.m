@@ -195,11 +195,11 @@ for col = 1:width(data)
 
         bonestl.(field_name) = TR_bone;
 
-        if bone_indx == 1 || bone_indx == 2 || bone_indx == 13
+        if bone_indx == 1 || bone_indx == 2 || bone_indx == 13 || bone_indx == 8 || bone_indx == 12 || bone_indx == 3
             % Perform the AAFACT calculation
             out.(field_name) = AAFACT_calculation(TR_bone, bone_indx, 2);
         end
-    end
+     end
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx)
         angles.TCA = angle_calculator(out.Talus(7,:), out.Talus(8,:), out.Calcaneus(7,:), out.Calcaneus(8,:), bonestl.Talus, bonestl.Calcaneus, "yz");
@@ -237,6 +237,30 @@ for col = 1:width(data)
         angles.TLSA = NaN;
     end
 
+    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % meary's
+        angles.MA_axial = angle_calculator(out.Talus(13,:), out.Talus(14,:), out.Metatarsal1(1,:), out.Metatarsal1(2,:), bonestl.Talus, bonestl.Metatarsal1, "xy");
+    else
+        angles.MA_axial = NaN;
+    end
+
+    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % meary's
+        angles.MA_sagittal = angle_calculator(out.Talus(19,:), out.Talus(20,:), out.Metatarsal1(1,:), out.Metatarsal1(2,:), bonestl.Talus, bonestl.Metatarsal1, "yz");
+    else
+        angles.MA_sagittal = NaN;
+    end
+
+    if ismember (1,all_bone_indx) && ismember(3,all_bone_indx) % Talonavicular Angle
+        angles.TNCA = angle_calculator(out.Talus(13,:), out.Talus(14,:), out.Navicular(1,:), out.Navicular(2,:), bonestl.Navicular, bonestl.Talus,"xy");
+    else
+        angles.TNCA = NaN;
+    end
+
+    if ismember(2,all_bone_indx) && ismember(8,all_bone_indx) && ismember(12,all_bone_indx) % FAO
+        z_min_coords = [out.Calcaneus(31,:); out.Metatarsal1(32,:); out.Metatarsal5(33,:)]; % columns correspond to x y z values of most inferior points
+        angles.FAO = FAO_calculation(out.Calcaneus(31,:), out.Metatarsal1(32,:), out.Calcaneus(31,:), out.Metatarsal5(33,:), bonestl.Calcaneus, bonestl.Metatarsal1, bonestl.Metatarsal5, bonestl.Talus, "xy", out.Talus(21,:), z_min_coords);
+    else
+        angles.FAO = NaN;
+    end
     %% Save Angles
     A = [
         "Talocalcaneal Angle",
@@ -244,7 +268,11 @@ for col = 1:width(data)
         "Talar Tilt Angle",
         "Saltzman 20 degree",
         "Medial Distal Tibial Angle",
-        "Tibial Lateral Surface Angle"
+        "Tibial Lateral Surface Angle",
+        "Meary's Angle (Axial)",
+        "Meary's Angle (Sagittal)"
+        "Talonavicular Angle"
+        "Foot and Ankle Offset"
         ];
 
     if length(ind_name) > 31
@@ -260,6 +288,6 @@ for col = 1:width(data)
     writematrix(A,xlfilename,'Sheet',ind_name);
     writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
 
-    
-
 end
+
+    % [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, z_min_point] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n),side_indx);
