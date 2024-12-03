@@ -1,7 +1,19 @@
 function out = AAFACT_calculation(TR_bone, bone_indx, side_indx)
 
+%% Initialize 'out'
 if bone_indx == 1
-    bone_coord = [2, 3]; % TT&ST
+    out(1:18,:) = zeros(18,3);
+elseif bone_indx == 2
+    out(1:15,:) = zeros(15,3);
+elseif bone_indx == 13 % Tibia
+    out(1:10,:) = zeros(10,3);
+else
+    out(1:6,:) = zeros(6,3);
+end
+
+%% Setup which bone coordinate systems needed to be calculated
+if bone_indx == 1
+    bone_coord = [1, 2, 3]; % TN&TT&ST
 elseif bone_indx == 2
     bone_coord = [1, 2]; % CC&ST
 else
@@ -25,12 +37,11 @@ conlist_original = TR_bone.ConnectivityList;
 for n = 1:length(bone_coord)
     nodes = nodes_original;
     conlist = conlist_original;
-    % name = name_original;
 
-    % if side_indx == 1
-    %     nodes = nodes.*[1,1,-1]; % Flip all rights to left
-    %     conlist = [conlist(:,3) conlist(:,2) conlist(:,1)];
-    % end
+    if side_indx == 1
+        nodes = nodes .* [1,1,-1];
+        conlist = [conlist(:,3) conlist(:,2) conlist(:,1)];
+    end
 
     joint_indx = 1;
 
@@ -44,7 +55,7 @@ for n = 1:length(bone_coord)
     [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start);
 
     %% Performs coordinate system calculation
-    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n),side_indx);
+    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
 
     %% Joint Origin
     if joint_indx > 1
@@ -54,18 +65,18 @@ for n = 1:length(bone_coord)
     end
 
     %% Temporarily Attach Coordinate System
-    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; MDTA; TLSA; SVA];
+    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; HindFront; MDTA; TLSA; SVA];
 
     %% Reorient and Translate to Original Input Origin and Orientation
-    [~, coords_final, coords_final_unit, ~, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
+    [~, coords_final, coords_final_unit, ~, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
 
     if bone_indx == 1 && bone_coord(n) == 3 % Additional alignment for talus subtalar ACS
         [aligned_nodes_TST, RTs_TST] = icp_template(bone_indx, nodes, 1, better_start);
         [Temp_Coordinates_TST, Temp_Nodes_TST] = CoordinateSystem(aligned_nodes_TST, bone_indx, 1, side_indx);
 
-        Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; MDTA; TLSA; SVA];
+        Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; HindFront; MDTA; TLSA; SVA];
 
-        [~, coords_final_TST, coords_final_unit_TST, ~] = reorient(Temp_Nodes_Coords_TST, cm_nodes, side_indx, RTs_TST);
+        [~, coords_final_TST, coords_final_unit_TST, ~, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords_TST, cm_nodes, side_indx, RTs_TST);
 
         coords_final = [coords_final(1,:); ((coords_final_TST(2,:) + coords_final(2,:)).'/2)'
             coords_final(3,:); ((coords_final_TST(4,:) + coords_final(4,:)).'/2)'
@@ -82,7 +93,7 @@ for n = 1:length(bone_coord)
     % fig_height = 600;
     % fig_left = (screen_size(3) - fig_width) / 2;
     % fig_bottom = (screen_size(4) - fig_height) / 2;
-    %
+    % 
     % fig1 = figure('Position', [fig_left, fig_bottom+15, fig_width, fig_height]);
     % Final_Bone = triangulation(conlist,nodes_original);
     % patch('Faces',Final_Bone.ConnectivityList,'Vertices',Final_Bone.Points,...
@@ -117,9 +128,12 @@ for n = 1:length(bone_coord)
         out(1:6,:) = coords_final_unit;
     elseif bone_indx == 1 && bone_coord(n)  == 3 % ST Talus
         out(7:12,:) = coords_final_unit;
+    elseif bone_indx == 1 && bone_coord(n)  == 1 % TN Talus
+        out(13:18,:) = coords_final_unit;   
     elseif bone_indx == 2 && bone_coord(n)  == 1 % CC Calc
         out(1:6,:) = coords_final_unit;
         out(13,:) = SVA_final;
+        out(14:15,:) = HindFront_Final;
     elseif bone_indx == 2 && bone_coord(n)  == 2 % ST Calc
         out(7:12,:) = coords_final_unit;
     elseif bone_indx == 13 % Tibia

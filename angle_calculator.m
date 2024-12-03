@@ -1,50 +1,63 @@
-function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plane)
-if plane == "yz"
-    viewv = [90 0];
-elseif plane == "xz"
-    viewv = [0 0];
-else
-    viewv = [90 90];
-end
+function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plane, side_indx, varargin)
 
-figure()
-patch('Faces',bone1.ConnectivityList,'Vertices',bone1.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-alpha(0.5)
-hold on
-patch('Faces',bone2.ConnectivityList,'Vertices',bone2.Points,...
-    'FaceColor', [0.85 0.85 0.85], ...
-    'EdgeColor','none',...
-    'FaceLighting','gouraud',...
-    'AmbientStrength', 0.15);
-alpha(0.5)
-view(viewv)
-camlight HEADLIGHT
-material('dull');
-axis equal
-axis off
-set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
-% xlabel('x')
-% ylabel('y')
-% zlabel('z')
+    % Check if 'measurement' was provided (using varargin for optional input)
+    if nargin > 8
+        measurement = varargin{1};
+    else
+        measurement = '';  % Default to an empty string or any default value
+    end
 
-plot_arrow(startA, endA, [0 0 1]);
-plot_arrow(startB, endB, [1 0 0]);
+    if plane == "yz"
+        viewv = [90 0];
+        ref_axis = [1, 0, 0]; % X-axis as the reference for YZ plane (Plantarflexion/Dorsiflexion)
+    elseif plane == "xz"
+        viewv = [0 0];
+        ref_axis = [0, 1, 0]; % Y-axis as the reference for XZ plane (Inversion/Eversion)
+    elseif plane == "xy"
+        viewv = [90 90];
+        ref_axis = [0, 0, 1]; % Z-axis as the reference for XY plane (Internal/External rotation)
+    else
+        viewv = [90 90];
+        ref_axis = [0, 0, 0]; % No reference for 3D case
+    end
 
+    % If measurement is specified, adjust the ref_axis accordingly
+    if strcmp(measurement, "MFMTibSag") || strcmp(measurement, "SVA")
+        ref_axis = [0, 0, 1];
+    end
 
-angle = ang_bet(startA, endA, startB, endB, plane);
+    figure()
+    patch('Faces',bone1.ConnectivityList,'Vertices',bone1.Points,...
+        'FaceColor', [0.85 0.85 0.85], ...
+        'EdgeColor','none',...
+        'FaceLighting','gouraud',...
+        'AmbientStrength', 0.15);
+    alpha(0.5)
+    hold on
+    patch('Faces',bone2.ConnectivityList,'Vertices',bone2.Points,...
+        'FaceColor', [0.85 0.85 0.85], ...
+        'EdgeColor','none',...
+        'FaceLighting','gouraud',...
+        'AmbientStrength', 0.15);
+    alpha(0.5)
+    view(viewv)
+    camlight HEADLIGHT
+    material('dull');
+    axis equal
+    axis off
+    set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
+    
+    plot_arrow(startA, endA, [0 0 1]);
+    plot_arrow(startB, endB, [1 0 0]);
 
+    angle = ang_bet(startA, endA, startB, endB, plane, ref_axis, side_indx);
 
     function plot_arrow(origin, direction, color)
         dir_normalized = 50 * (direction - origin) / norm(direction - origin);
         arrow(origin, origin + dir_normalized, 'FaceColor', color, 'EdgeColor', color, 'LineWidth', 2, 'Length', 7);
     end
 
-    function angle_between = ang_bet(startA, endA, startB, endB, plane)
-
+    function angle_between = ang_bet(startA, endA, startB, endB, plane, ref_axis, side_indx)
         % Calculate the direction vectors
         vector1 = endA - startA;
         vector2 = endB - startB;
@@ -69,5 +82,32 @@ angle = ang_bet(startA, endA, startB, endB, plane);
 
         % Calculate the angle using atan2d
         angle_between = atan2d(norm(cross_product), dot_product);
+
+        % Adjust for lateralities (mirroring behavior for left bones)
+        if plane == "yz"
+            % Plantarflexion (negative) vs. Dorsiflexion (positive) - no mirroring needed
+            sign_of_angle = dot(cross_product, ref_axis);
+            if sign_of_angle > 0
+                angle_between = -angle_between;
+            end
+        elseif plane == "xy"
+            % Internal (negative) vs. External (positive) rotation - mirrored for left side
+            sign_of_angle = dot(cross_product, ref_axis);
+            if sign_of_angle > 0
+                angle_between = -angle_between;
+            end
+            if side_indx == 2  % Left bone
+                angle_between = -angle_between;  % Mirror for left side
+            end
+        elseif plane == "xz"
+            % Inversion (negative) vs. Eversion (positive) - mirrored for left side
+            sign_of_angle = dot(cross_product, ref_axis);
+            if sign_of_angle > 0
+                angle_between = -angle_between;
+            end
+            if side_indx == 2  % Left bone
+                angle_between = -angle_between;  % Mirror for left side
+            end
+        end
     end
 end
