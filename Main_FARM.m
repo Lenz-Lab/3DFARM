@@ -57,14 +57,6 @@ for col = 1:width(data)
     stl_files = data{2:end, col};
     stl_files = stl_files(~cellfun('isempty', stl_files)); % Remove empty cells
 
-    % Check if the word "talus" is present in any cell
-    % isTalusPresent = any(cellfun(@(x) contains(x, 'talus', 'IgnoreCase', true), stl_files));
-
-    % If "talus" is not found, display an error message
-    % if ~isTalusPresent
-    %     error('You must include the talus, even if you aren''t analyzing it');
-    % end
-
     % Iterate through each STL file for the current person
     for file_idx = 1:length(stl_files)
         clear bone_indx
@@ -105,8 +97,6 @@ for col = 1:width(data)
             [side_indx, ~] = listdlg('PromptString', [{strcat('Select which side this file is:', " ", string(FileName))} {''}], 'ListString', list_side, 'SelectionMode', 'single');
         end
 
-        % side_indx = 1;
-
         all_bone_indx(1, file_idx) = bone_indx;
 
         % Load in file based on file type
@@ -114,14 +104,6 @@ for col = 1:width(data)
             TR = stlread(fullfile(folder_path, FileName));
             nodes = TR.Points;
             conlist = TR.ConnectivityList;
-
-            % if side_indx == 1
-            %     bone_nodes = nodes .* [1,1,-1];
-            %     bone_faces = [conlist(:,3) conlist(:,2) conlist(:,1)];
-            % else
-            %     bone_nodes = nodes;
-            %     bone_faces = conlist;
-            % end
 
             bone_name = list_bone{bone_indx};
 
@@ -134,15 +116,65 @@ for col = 1:width(data)
             bonestl.(field_name) = TR_bone;
 
         else
-            disp('This is not an acceptable file type at this time, please choose either a ".stl" file type.')
+            disp('This is not an acceptable file type at this time, please choose an ".stl" file type.')
             return
         end
+    end
 
-        if bone_indx == 1 || bone_indx == 2 || bone_indx == 9 || bone_indx == 13
-            % Perform the AAFACT calculation
-            out.(field_name) = AAFACT_calculation(bonestl.(field_name), bone_indx, side_indx);
+    % Loop through list_bone in order
+    for i = 1:length(list_bone)
+        % Check if the current bone index is in all_bone_indx
+        if ismember(i, all_bone_indx)
+            % Get the name of the first available bone
+            bone_name = list_bone{i};
+
+            [temp_points,cm] = center(bonestl.(bone_name).Points,1);
+
+            % Run icp_template on the first available bone
+            if side_indx == 1
+                temp_points = temp_points.* [-1,1,1];
+            end
+
+            [~, RTs] = icp_template(i, temp_points, 1, 1);
+
+
+            % Apply the transformation to all bones in all_bone_indx
+            for j = all_bone_indx
+                transform_bone_name = list_bone{j};
+
+                points = bonestl.(transform_bone_name).Points - cm;
+
+                if side_indx == 1
+                    points = points.* [-1,1,1];
+                end
+
+                % Transform the bone points
+                transformed_points = ...
+                    (RTs.iR * ((points * RTs.iflip)') + repmat(RTs.iT, 1, length(points')))';
+
+                if side_indx == 1
+                    bonestl.(transform_bone_name) = triangulation(bonestl.(transform_bone_name).ConnectivityList,transformed_points.* [-1,1,1]);
+                else
+                    bonestl.(transform_bone_name) = triangulation(bonestl.(transform_bone_name).ConnectivityList,transformed_points);
+                end
+
+                clear transformed_points
+
+            end
+
+            % Exit the loop after transforming all bones
+            break;
         end
     end
+
+    for j = 1:length(all_bone_indx)
+        if ismember(all_bone_indx(j), [1, 2, 9, 13])
+            AAFACT_bone = list_bone{all_bone_indx(j)};
+            % Perform the AAFACT calculation
+            out.(AAFACT_bone) = AAFACT_calculation(bonestl.(AAFACT_bone), all_bone_indx(j), side_indx);
+        end
+    end
+
 
     %% Angle Calculations
 
