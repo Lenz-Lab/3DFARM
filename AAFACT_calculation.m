@@ -1,14 +1,14 @@
 function out = AAFACT_calculation(TR_bone, bone_indx, side_indx)
 
 %% Initialize 'out'
-if bone_indx == 1
-    out(1:18,:) = zeros(18,3);
-elseif bone_indx == 2
-    out(1:15,:) = zeros(15,3);
-elseif bone_indx == 13 % Tibia
-    out(1:10,:) = zeros(10,3);
+% Define the size mapping for initialization based on bone_indx
+size_mapping = containers.Map({1, 2, 8, 12, 13}, {21, 16, 7, 7, 10}); % Default to 6 if not specified
+default_size = 6;
+
+if isKey(size_mapping, bone_indx)
+    out = zeros(size_mapping(bone_indx), 3);
 else
-    out(1:6,:) = zeros(6,3);
+    out = zeros(default_size, 3);
 end
 
 %% Setup which bone coordinate systems needed to be calculated
@@ -55,7 +55,7 @@ for n = 1:length(bone_coord)
     [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start);
 
     %% Performs coordinate system calculation
-    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
+    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
 
     %% Joint Origin
     if joint_indx > 1
@@ -64,19 +64,27 @@ for n = 1:length(bone_coord)
         Joint = "Center";
     end
 
+    if bone_indx == 1 && bone_coord(n) == 2
+        joint_indx = 3;
+        [Temp_Coordinates_FAO, ~] = JointOrigin(Temp_Coordinates, Temp_Nodes, conlist, bone_indx, joint_indx, side_indx);
+        FAO_peak = Temp_Coordinates_FAO(1,:); % point of talar dome center
+    else
+        FAO_peak = [0,0,0];
+    end
+
     %% Temporarily Attach Coordinate System
-    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; HindFront; MDTA; TLSA; SVA];
+    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; FAO_peak; z_min_xyz; MEARY; HindFront; MDTA; TLSA; SVA];
 
     %% Reorient and Translate to Original Input Origin and Orientation
-    [~, coords_final, coords_final_unit, ~, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
+    [~, coords_final, coords_final_unit, ~, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
 
     if bone_indx == 1 && bone_coord(n) == 3 % Additional alignment for talus subtalar ACS
         [aligned_nodes_TST, RTs_TST] = icp_template(bone_indx, nodes, 1, better_start);
         [Temp_Coordinates_TST, Temp_Nodes_TST] = CoordinateSystem(aligned_nodes_TST, bone_indx, 1, side_indx);
 
-        Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; HindFront; MDTA; TLSA; SVA];
+        Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; FAO_peak; z_min_xyz; MEARY;  HindFront; MDTA; TLSA; SVA];
 
-        [~, coords_final_TST, coords_final_unit_TST, ~, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords_TST, cm_nodes, side_indx, RTs_TST);
+        [~, coords_final_TST, coords_final_unit_TST, ~, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords_TST, cm_nodes, side_indx, RTs_TST);
 
         coords_final = [coords_final(1,:); ((coords_final_TST(2,:) + coords_final(2,:)).'/2)'
             coords_final(3,:); ((coords_final_TST(4,:) + coords_final(4,:)).'/2)'
@@ -93,7 +101,7 @@ for n = 1:length(bone_coord)
     % fig_height = 600;
     % fig_left = (screen_size(3) - fig_width) / 2;
     % fig_bottom = (screen_size(4) - fig_height) / 2;
-    % 
+    %
     % fig1 = figure('Position', [fig_left, fig_bottom+15, fig_width, fig_height]);
     % Final_Bone = triangulation(conlist,nodes_original);
     % patch('Faces',Final_Bone.ConnectivityList,'Vertices',Final_Bone.Points,...
@@ -123,25 +131,42 @@ for n = 1:length(bone_coord)
     % zlabel('Z')
     % axis equal
 
+
     %% Save both coordinate systems to spreadsheet
-    if bone_indx == 1 && bone_coord(n) == 2 % TT Talus
-        out(1:6,:) = coords_final_unit;
-    elseif bone_indx == 1 && bone_coord(n)  == 3 % ST Talus
-        out(7:12,:) = coords_final_unit;
-    elseif bone_indx == 1 && bone_coord(n)  == 1 % TN Talus
-        out(13:18,:) = coords_final_unit;   
-    elseif bone_indx == 2 && bone_coord(n)  == 1 % CC Calc
-        out(1:6,:) = coords_final_unit;
-        out(13,:) = SVA_final;
-        out(14:15,:) = HindFront_Final;
-    elseif bone_indx == 2 && bone_coord(n)  == 2 % ST Calc
-        out(7:12,:) = coords_final_unit;
-    elseif bone_indx == 13 % Tibia
-        out = [coords_final_unit;
-            MDTA_final;
-            TLSA_final];
-    else
-        out = coords_final_unit;
+    switch bone_indx
+        case 1 % Talus
+            switch bone_coord(n)
+                case 2 % TT Talus
+                    out(1:6, :) = coords_final_unit;
+                    out(21, :) = talus_coords_FAO;
+                case 3 % ST Talus
+                    out(7:12, :) = coords_final_unit;
+                case 1 % TN Talus
+                    out(13:18, :) = coords_final_unit;
+                    out(19:20, :) = MEARY_final;
+            end
+        case 2 % Calcaneus
+            switch bone_coord(n)
+                case 1 % CC Calc
+                    out(1:6, :) = coords_final_unit;
+                    out(13, :) = SVA_final;
+                    out(14:15, :) = HindFront_Final;
+                    out(16, :) = z_min_xyz_final;
+                case 2 % ST Calc
+                    out(7:12, :) = coords_final_unit;
+            end
+        case 3 % Navicular
+            out(1:6, :) = coords_final_unit;
+        case 8 % Metatarsal 1
+            out(1:6, :) = coords_final_unit;
+            out(7, :) = z_min_xyz_final;
+        case 12 % Metatarsal 5
+            out(1:6, :) = coords_final_unit;
+            out(7, :) = z_min_xyz_final;
+        case 13 % Tibia
+            out = [coords_final_unit; MDTA_final; TLSA_final];
+        otherwise
+            out = coords_final_unit;
     end
 
 end

@@ -168,7 +168,7 @@ for col = 1:width(data)
     end
 
     for j = 1:length(all_bone_indx)
-        if ismember(all_bone_indx(j), [1, 2, 9, 13])
+        if ismember(all_bone_indx(j), [1, 2, 3, 8, 9, 12, 13])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             % Perform the AAFACT calculation
             out.(AAFACT_bone) = AAFACT_calculation(bonestl.(AAFACT_bone), all_bone_indx(j), side_indx);
@@ -337,6 +337,32 @@ for col = 1:width(data)
         angles.TNOAYZ = NaN;
     end
 
+    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's XY
+        angles.MA_axial = angle_calculator(out.Talus(13,:), out.Talus(14,:), out.Metatarsal1(1,:), out.Metatarsal1(2,:), bonestl.Talus, bonestl.Metatarsal1, "xy", side_indx);
+    else
+        angles.MA_axial = NaN;
+    end
+
+    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's YZ
+        angles.MA_sagittal = angle_calculator(out.Talus(19,:), out.Talus(20,:), out.Metatarsal1(1,:), out.Metatarsal1(2,:), bonestl.Talus, bonestl.Metatarsal1, "yz", side_indx);
+    else
+        angles.MA_sagittal = NaN;
+    end
+
+    if ismember (1,all_bone_indx) && ismember(3,all_bone_indx) % Talonavicular Angle
+        angles.TNCA = angle_calculator(out.Talus(13,:), out.Talus(14,:), out.Navicular(1,:), out.Navicular(2,:), bonestl.Navicular, bonestl.Talus,"xy", side_indx);
+    else
+        angles.TNCA = NaN;
+    end
+    
+    if ismember(2,all_bone_indx) && ismember(8,all_bone_indx) && ismember(12,all_bone_indx) % FAO
+        z_min_coords = [out.Calcaneus(16,:); out.Metatarsal1(7,:); out.Metatarsal5(7,:)]; % columns correspond to x y z values of most inferior points
+        angles.FAO = FAO_calculation(out.Calcaneus(16,:), out.Metatarsal1(7,:), out.Calcaneus(16,:), out.Metatarsal5(7,:), bonestl.Calcaneus, bonestl.Metatarsal1, bonestl.Metatarsal5, bonestl.Talus, "xy", out.Talus(21,:), z_min_coords);
+    else
+        angles.FAO = NaN;
+    end
+
+
     %% Save Angles
     A = [
         "Talocalcaneal Angle",
@@ -353,7 +379,11 @@ for col = 1:width(data)
         "MFM Tibial Frontal",
         "Talonavicular Offset Angle 3D",
         "Talonavicular Offset Angle XY",
-        "Talonavicular Offset Angle YZ"
+        "Talonavicular Offset Angle YZ",
+        "Meary's Angle (Axial)",
+        "Meary's Angle (Sagittal)"
+        "Talonavicular Angle"
+        "Foot and Ankle Offset (%)"
         ];
 
     if length(ind_name) > 31
