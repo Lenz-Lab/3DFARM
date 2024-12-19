@@ -221,7 +221,7 @@ for col = 1:width(data)
     if ismember(13, all_bone_indx) % MFM Calcaneas AP vs Tibia BB AP in Sagittal Plane (Tibia Transverse Plane)
 
         % Ask the user if they are doing an MFM
-        % mfm_response = questdlg('Are you doing an MFM calculation?', 'MFM Calculation', 'Yes', 'No', 'No');
+        mfm_response = questdlg('Are you doing an MFM calculation?', 'MFM Calculation', 'Yes', 'No', 'No');
         mfm_response = 'No';
 
         if strcmp(mfm_response, 'Yes')
