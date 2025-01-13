@@ -40,10 +40,10 @@ names = data{1, :};
 % Lists for detemining bone and side
 list_bone = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
     'Lateral_Cuneiform','Metatarsal1','Metatarsal2','Metatarsal3','Metatarsal4','Metatarsal5',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','BB_Med','BB_Lat'};
 list_bone2 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','First_Metatarsal','Second_Metatarsal','Third_Metatarsal','Fourth_Metatarsal','Fifth_Metatarsal',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','BB_Med','BB_Lat'};
 list_side_folder = {'Right','_R.','_R_','Left','_L.','_L_'};
 list_side = {'Right','Left'};
 
@@ -185,7 +185,7 @@ for col = 1:width(data)
     end
 
     if ismember(2,all_bone_indx) % Calcaneal Inclincation Angle
-        angles.CIA = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2)+1, out.Calcaneus(1,3)], out.Calcaneus(1,:), out.Calcaneus(2,:), bonestl.Calcaneus, bonestl.Calcaneus, "yz", side_indx);
+        angles.CIA = -angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2)+1, out.Calcaneus(1,3)], out.Calcaneus(1,:), out.Calcaneus(2,:), bonestl.Calcaneus, bonestl.Calcaneus, "yz", side_indx);
         if angles.CIA > 120 || angles.CIA < -120
             close(gcf);
             angles.CIA = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2)-1, out.Calcaneus(1,3)], out.Calcaneus(1,:), out.Calcaneus(2,:), bonestl.Calcaneus, bonestl.Calcaneus, "yz", side_indx);
@@ -218,23 +218,11 @@ for col = 1:width(data)
         angles.TLSA = NaN;
     end
 
-    if ismember(13, all_bone_indx) % MFM Calcaneas AP vs Tibia BB AP in Sagittal Plane (Tibia Transverse Plane)
-
-        % Ask the user if they are doing an MFM
-        mfm_response = questdlg('Are you doing an MFM calculation?', 'MFM Calculation', 'Yes', 'No', 'No');
-        mfm_response = 'No';
-
-        if strcmp(mfm_response, 'Yes')
-            % If Yes, prompt for the lateral and medial tibial 3D points
-            prompt = {'Enter lateral tibial 3D points (format: x y z):', 'Enter medial tibial 3D points (format: x y z):'};
-            dlg_title = 'Input for MFM Tibial Points';
-            num_lines = 1;
-            default_points = {'0 0 0', '0 0 0'};  % Default values in case user provides no input
-            answer = inputdlg(prompt, dlg_title, num_lines, default_points);
+    if ismember(13, all_bone_indx) && ismember(15, all_bone_indx) && ismember(16, all_bone_indx) % MFM Tibia AP
 
             % Convert the input strings to numeric arrays by removing any commas
-            lateral_tibial_points = str2num(regexprep(answer{1}, '[,]', ' ')); %#ok<ST2NM>
-            medial_tibial_points = str2num(regexprep(answer{2}, '[,]', ' '));  %#ok<ST2NM>
+            lateral_tibial_points = mean(bonestl.BB_Lat.Points);
+            medial_tibial_points = mean(bonestl.BB_Med.Points);
 
             % Assuming lateral_tibial_points and medial_tibial_points are already inputted
 
@@ -264,60 +252,91 @@ for col = 1:width(data)
 
 
             % Do the MFM calculation using the input tibial points
-            angles.MFMTibTrans = angle_calculator(out.Calcaneus(1,:), out.Calcaneus(2,:), perpendicular_point1, perpendicular_point2, bonestl.Calcaneus, bonestl.Tibia, "xy", side_indx);
-        else
-            % If No, skip the MFM calculation and assign NaN
-            angles.MFMTibTrans = NaN;
-        end
+            angles.MFMTibAP = angle_calculator(out.Tibia(1,:), out.Tibia(2,:), perpendicular_point1, perpendicular_point2, bonestl.Tibia, bonestl.Tibia, "xy", side_indx);
+            if angles.MFMTibAP > 120 || angles.MFMTibAP < -120
+                close(gcf);
+                angles.MFMTibAP = angle_calculator(out.Tibia(1,:), out.Tibia(2,:), perpendicular_point2, perpendicular_point1, bonestl.Tibia, bonestl.Tibia, "xy", side_indx);
+            end
     else
-        angles.MFMTibTrans = NaN;
+        angles.MFMTibAP = NaN;
     end
 
-    if ismember(2,all_bone_indx) && ismember(9,all_bone_indx) % MFM Calcaneas AP vs Metatarsal 2 AP in Transverse Plane (Forefoot Transverse Plane)
-        angles.MFMForeTrans = angle_calculator(out.Calcaneus(1,:), out.Calcaneus(2,:), out.Metatarsal2(1,:), out.Metatarsal2(2,:), bonestl.Calcaneus, bonestl.Metatarsal2, "xy", side_indx);
+    if ismember(2,all_bone_indx) % MFM Calcaneas AP vs Metatarsal 2 AP in Transverse Plane (MFM Calc AP)
+        angles.MFMCalcAP = angle_calculator(out.Calcaneus(1,:), out.Calcaneus(2,:), [0 0 0], [0 1 0], bonestl.Calcaneus, bonestl.Calcaneus, "xy", side_indx);
     else
-        angles.MFMForeTrans = NaN;
+        angles.MFMCalcAP = NaN;
     end
 
-    if ismember(13,all_bone_indx) % MFM Tibia SI vs Z in Sagittal Plane (Tibia Sagittal Plane)
-        angles.MFMTibSag = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)+1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "yz", side_indx, 'MFMTibSag');
-        if angles.MFMTibSag > 120 || angles.MFMTibSag < -120
+    if ismember(9,all_bone_indx) % MFM Calcaneas AP vs Metatarsal 2 AP in Transverse Plane (MFM 2M AP)
+        angles.MFMM2AP = angle_calculator(out.Metatarsal2(1,:), out.Metatarsal2(2,:), [0 0 0], [0 1 0], bonestl.Metatarsal2, bonestl.Metatarsal2, "xy", side_indx);
+    else
+        angles.MFMM2AP = NaN;
+    end
+
+    % if ismember(2,all_bone_indx) && ismember(9,all_bone_indx) % MFM Calcaneas AP vs Metatarsal 2 AP in Transverse Plane (Forefoot Transverse Plane)
+    %     angles.MFMForeTrans = angle_calculator(out.Calcaneus(1,:), out.Calcaneus(2,:), out.Metatarsal2(1,:), out.Metatarsal2(2,:), bonestl.Calcaneus, bonestl.Metatarsal2, "xy", side_indx);
+    % else
+    %     angles.MFMForeTrans = NaN;
+    % end
+
+    if ismember(13,all_bone_indx) % MFM Tibia SI vs Z in Sagittal Plane (MFM Tibia Lateral)
+        angles.MFMTibLat = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)+1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "yz", side_indx, 'MFMTibSag');
+        if angles.MFMTibLat > 120 || angles.MFMTibLat < -120
             close(gcf);
-            angles.MFMTibSag = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)-1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "yz", side_indx, 'MFMTibSag');
+            angles.MFMTibLat = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)-1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "yz", side_indx, 'MFMTibSag');
         end
     else
-        angles.MFMTibSag = NaN;
+        angles.MFMTibLat = NaN;
     end
 
-    if ismember(9,all_bone_indx) % MFM Metatarsal 2 AP vs Y in Sagittal Plane (Forefoot Sagittal Plane)
-        angles.MFMForeSag = angle_calculator(out.Metatarsal2(1,:), [out.Metatarsal2(1,1), out.Metatarsal2(1,2)+1, out.Metatarsal2(1,3)], out.Metatarsal2(1,:), out.Metatarsal2(2,:), bonestl.Metatarsal2, bonestl.Metatarsal2, "yz", side_indx);
-        if angles.MFMForeSag > 120 || angles.MFMForeSag < -120
+    if ismember(9,all_bone_indx) % MFM Metatarsal 2 AP vs Y in Sagittal Plane (MFM 2M Lateral)
+        angles.MFM2MLat = -angle_calculator(out.Metatarsal2(1,:), [out.Metatarsal2(1,1), out.Metatarsal2(1,2)+1, out.Metatarsal2(1,3)], out.Metatarsal2(1,:), out.Metatarsal2(2,:), bonestl.Metatarsal2, bonestl.Metatarsal2, "yz", side_indx);
+        if angles.MFM2MLat > 120 || angles.MFM2MLat < -120
             close(gcf);
-            angles.MFMForeSag = angle_calculator(out.Metatarsal2(1,:), [out.Metatarsal2(1,1), out.Metatarsal2(1,2)-1, out.Metatarsal2(1,3)], out.Metatarsal2(1,:), out.Metatarsal2(2,:), bonestl.Metatarsal2, bonestl.Metatarsal2, "yz", side_indx);
+            angles.MFM2MLat = angle_calculator(out.Metatarsal2(1,:), [out.Metatarsal2(1,1), out.Metatarsal2(1,2)-1, out.Metatarsal2(1,3)], out.Metatarsal2(1,:), out.Metatarsal2(2,:), bonestl.Metatarsal2, bonestl.Metatarsal2, "yz", side_indx);
         end
     else
-        angles.MFMForeSag = NaN;
+        angles.MFM2MLat = NaN;
     end
 
-    if ismember(2,all_bone_indx) % MFM Calcaneas SI vs Z in Frontal Plane (Hindfoot Frontal Plane)
-        angles.MFMHindFront = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2), out.Calcaneus(1,3)+1], out.Calcaneus(14,:), out.Calcaneus(15,:), bonestl.Calcaneus, bonestl.Calcaneus, "xz", side_indx);
-        if angles.MFMHindFront > 120 || angles.MFMHindFront < -120
-            close(gcf);
-            angles.MFMHindFront = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2), out.Calcaneus(1,3)-1], out.Calcaneus(14,:), out.Calcaneus(15,:), bonestl.Calcaneus, bonestl.Calcaneus, "xz", side_indx);
-        end
+    if ismember(13, all_bone_indx) && ismember(2, all_bone_indx) % Milwaukee
+        trace = 10.9;
+        new_tibia = bonestl.Tibia.Points * rotz(-trace) * rotx(-45);
+        new_calcaneus = bonestl.Calcaneus.Points * rotz(-trace) * rotx(-45);
+
+        new_out_tib = out.Tibia * rotz(-trace) * rotx(-45);
+        new_out_calc = out.Calcaneus * rotz(-trace) * rotx(-45);
+
+        TR_tibia = triangulation(bonestl.Tibia.ConnectivityList,new_tibia);
+        TR_calcaneus = triangulation(bonestl.Calcaneus.ConnectivityList,new_calcaneus);
+
+        % Do the Milwaukee calculation using the input tibia and calc
+        angles.MilTib = angle_calculator(new_out_tib(3,:), new_out_tib(4,:), [0 0 0], [0 0 1], TR_tibia, TR_tibia, "xz", side_indx);
+        angles.MilCalc = angle_calculator(new_out_calc(1,:), new_out_calc(2,:), [0 0 0], [0 0 1], TR_calcaneus, TR_calcaneus, "xz", side_indx);
     else
-        angles.MFMHindFront = NaN;
+        angles.MilTib = NaN;
+        angles.MilCalc = NaN;
     end
 
-    if ismember(13,all_bone_indx) % MFM Tibia SI vs Z in Frontal Plane (Tibia Frontal Plane)
-        angles.MFMTibFront = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)+1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "xz", side_indx);
-        if angles.MFMTibFront > 120 || angles.MFMTibFront < -120
-            close(gcf);
-            angles.MFMTibFront = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)-1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "xz", side_indx);
-        end
-    else
-        angles.MFMTibFront = NaN;
-    end
+    % if ismember(2,all_bone_indx) % MFM Calcaneas SI vs Z in Frontal Plane (Hindfoot Frontal Plane)
+    %     angles.MFMHindFront = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2), out.Calcaneus(1,3)+1], out.Calcaneus(14,:), out.Calcaneus(15,:), bonestl.Calcaneus, bonestl.Calcaneus, "xz", side_indx);
+    %     if angles.MFMHindFront > 120 || angles.MFMHindFront < -120
+    %         close(gcf);
+    %         angles.MFMHindFront = angle_calculator(out.Calcaneus(1,:), [out.Calcaneus(1,1), out.Calcaneus(1,2), out.Calcaneus(1,3)-1], out.Calcaneus(14,:), out.Calcaneus(15,:), bonestl.Calcaneus, bonestl.Calcaneus, "xz", side_indx);
+    %     end
+    % else
+    %     angles.MFMHindFront = NaN;
+    % end
+    % 
+    % if ismember(13,all_bone_indx) % MFM Tibia SI vs Z in Frontal Plane (Tibia Frontal Plane)
+    %     angles.MFMTibFront = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)+1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "xz", side_indx);
+    %     if angles.MFMTibFront > 120 || angles.MFMTibFront < -120
+    %         close(gcf);
+    %         angles.MFMTibFront = angle_calculator(out.Tibia(1,:), [out.Tibia(1,1), out.Tibia(1,2), out.Tibia(1,3)-1], out.Tibia(1,:), out.Tibia(4,:), bonestl.Tibia, bonestl.Tibia, "xz", side_indx);
+    %     end
+    % else
+    %     angles.MFMTibFront = NaN;
+    % end
 
     if ismember(1,all_bone_indx) % Talar Neck Offset Angle 3D
         angles.TNOA3D = angle_calculator(out.Talus(1,:), out.Talus(2,:), out.Talus(13,:), out.Talus(14,:), bonestl.Talus, bonestl.Talus, "3D", side_indx);
@@ -366,17 +385,16 @@ for col = 1:width(data)
     %% Save Angles
     A = [
         "Talocalcaneal Angle",
-        "Calcaneal Inclination Angle",
+        "Calcaneal Inclination Angle (MFM Calcaneus Lateral)",
         "Talar Tilt Angle",
         "Hindfoot Alignment Angle",
         "Medial Distal Tibial Angle",
         "Tibial Lateral Surface Angle",
-        "MFM Tibial Transverse",
-        "MFM Forefoot Transverse",
-        "MFM Tibial Sagittal",
-        "MFM Forefoot Sagittal",
-        "MFM Hindfoot Frontal",
-        "MFM Tibial Frontal",
+        "MFM Tibial AP",
+        "MFM Calcaneal AP",
+        "MFM 2nd Metatarsal AP",
+        "MFM Tibial Lateral",
+        "MFM 2nd Metatarsal Lateral",
         "Talonavicular Offset Angle 3D",
         "Talonavicular Offset Angle XY",
         "Talonavicular Offset Angle YZ",
