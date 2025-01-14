@@ -395,6 +395,8 @@ for col = 1:width(data)
         "MFM 2nd Metatarsal AP",
         "MFM Tibial Lateral",
         "MFM 2nd Metatarsal Lateral",
+        "Milwaukee Tibia",
+        "Milwaukee Calcaneus",
         "Talonavicular Offset Angle 3D",
         "Talonavicular Offset Angle XY",
         "Talonavicular Offset Angle YZ",
