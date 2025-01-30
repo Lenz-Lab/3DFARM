@@ -102,6 +102,7 @@ for col = 1:width(data)
         % Load in file based on file type
         if strcmp(ext, '.stl')
             TR = stlread(fullfile(folder_path, FileName));
+            % TR = stlread(fullfile(FileName));
             nodes = TR.Points;
             conlist = TR.ConnectivityList;
 
@@ -148,6 +149,8 @@ for col = 1:width(data)
                     points = points.* [-1,1,1];
                 end
 
+                 points = (RTs.Rmetpca * points')';
+
                 % Transform the bone points
                 transformed_points = ...
                     (RTs.iR * ((points * RTs.iflip)') + repmat(RTs.iT, 1, length(points')))';
@@ -167,6 +170,7 @@ for col = 1:width(data)
         end
     end
 
+    % Potentially parallel loop this
     for j = 1:length(all_bone_indx)
         if ismember(all_bone_indx(j), [1, 2, 3, 8, 9, 12, 13])
             AAFACT_bone = list_bone{all_bone_indx(j)};
@@ -174,7 +178,6 @@ for col = 1:width(data)
             out.(AAFACT_bone) = AAFACT_calculation(bonestl.(AAFACT_bone), all_bone_indx(j), side_indx);
         end
     end
-
 
     %% Angle Calculations
 
@@ -300,12 +303,26 @@ for col = 1:width(data)
     end
 
     if ismember(13, all_bone_indx) && ismember(2, all_bone_indx) % Milwaukee
-        trace = 10.9;
-        new_tibia = bonestl.Tibia.Points * rotz(-trace) * rotx(-45);
-        new_calcaneus = bonestl.Calcaneus.Points * rotz(-trace) * rotx(-45);
 
-        new_out_tib = out.Tibia * rotz(-trace) * rotx(-45);
-        new_out_calc = out.Calcaneus * rotz(-trace) * rotx(-45);
+        prompt = {'Enter the trace angle:'};
+        dlg_title = 'Trace Angle Input';
+        num_lines = 1;
+        answer = inputdlg(prompt, dlg_title, num_lines);
+        trace = str2double(answer{1}); % Convert to numeric
+
+        if side_indx == 1
+            new_tibia = bonestl.Tibia.Points * rotz(-trace) * rotx(-45);
+            new_calcaneus = bonestl.Calcaneus.Points * rotz(-trace) * rotx(-45);
+
+            new_out_tib = out.Tibia * rotz(-trace) * rotx(-45);
+            new_out_calc = out.Calcaneus * rotz(-trace) * rotx(-45);
+        else
+            new_tibia = bonestl.Tibia.Points * rotz(trace) * rotx(-45);
+            new_calcaneus = bonestl.Calcaneus.Points * rotz(trace) * rotx(-45);
+
+            new_out_tib = out.Tibia * rotz(trace) * rotx(-45);
+            new_out_calc = out.Calcaneus * rotz(trace) * rotx(-45);
+        end
 
         TR_tibia = triangulation(bonestl.Tibia.ConnectivityList,new_tibia);
         TR_calcaneus = triangulation(bonestl.Calcaneus.ConnectivityList,new_calcaneus);
@@ -356,13 +373,13 @@ for col = 1:width(data)
         angles.TNOAYZ = NaN;
     end
 
-    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's XY
+    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's Axial
         angles.MA_axial = angle_calculator(out.Talus(13,:), out.Talus(14,:), out.Metatarsal1(1,:), out.Metatarsal1(2,:), bonestl.Talus, bonestl.Metatarsal1, "xy", side_indx);
     else
         angles.MA_axial = NaN;
     end
 
-    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's YZ
+    if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's Sagittal
         angles.MA_sagittal = angle_calculator(out.Talus(19,:), out.Talus(20,:), out.Metatarsal1(1,:), out.Metatarsal1(2,:), bonestl.Talus, bonestl.Metatarsal1, "yz", side_indx);
     else
         angles.MA_sagittal = NaN;
@@ -379,6 +396,12 @@ for col = 1:width(data)
         angles.FAO = FAO_calculation(out.Calcaneus(16,:), out.Metatarsal1(7,:), out.Calcaneus(16,:), out.Metatarsal5(7,:), bonestl.Calcaneus, bonestl.Metatarsal1, bonestl.Metatarsal5, bonestl.Talus, "xy", out.Talus(21,:), z_min_coords);
     else
         angles.FAO = NaN;
+    end
+
+    if ismember (8,all_bone_indx) && ismember(9,all_bone_indx) % 1-2 Intermetatarsal
+        angles.Intermet12 = angle_calculator(out.Metatarsal1(1,:), out.Metatarsal1(2,:), out.Metatarsal2(1,:), out.Metatarsal2(2,:), bonestl.Metatarsal1, bonestl.Metatarsal2,"xy", side_indx);
+    else
+        angles.Intermet12 = NaN;
     end
 
 
@@ -420,3 +443,5 @@ for col = 1:width(data)
     writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
 
 end
+
+delete(gcp('nocreate')); % Stops the pool if it's running, does nothing if not

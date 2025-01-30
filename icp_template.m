@@ -69,6 +69,27 @@ end
 nodes_template = TR_template.Points;
 con_temp = TR_template.ConnectivityList;
 
+if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) % Use PCA to give a starting alignment point for metatarsals and talus
+    [eigenvectors, ~] = eig(cov(nodes));
+
+    [~, idx] = sort(diag(cov(nodes)), 'descend');
+    primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
+
+    target_direction = [0; 1; 0];
+    rotation_axis = cross(primary_axis, target_direction);
+    rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
+    theta = acos(dot(primary_axis, target_direction)); % Rotation angle
+
+    K = [0, -rotation_axis(3), rotation_axis(2);
+        rotation_axis(3), 0, -rotation_axis(1);
+        -rotation_axis(2), rotation_axis(1), 0]; % Skew-symmetric matrix
+    Rmetpca = eye(3) + sin(theta) * K + (1 - cos(theta)) * (K * K);
+
+    nodes = (Rmetpca * nodes')'; % Transpose for matrix multiplication
+else
+    Rmetpca = [];
+end
+
 max_nodes_x = (max(nodes(:,1)) - min(nodes(:,1)));
 max_nodes_y = (max(nodes(:,2)) - min(nodes(:,2)));
 max_nodes_z = (max(nodes(:,3)) - min(nodes(:,3)));
@@ -440,19 +461,20 @@ RTs.sT_tibia = sT_tibia; % secondary translation (for tibia) Ttw
 RTs.sR_fibula = sR_fibula; % secondary rotation (for fibula) Rtw
 RTs.sT_fibula = sT_fibula; % secondary translation (for fibula) Ttw
 RTs.cm_meta = cm_meta; % centering metatarsals cm_meta
+RTs.Rmetpca = Rmetpca; % initial metatarsal PCA alignment
 RTs.red = [];
 RTs.yellow = [];
 
 %% Visualize proper alignment
-figure()
-if bone_indx == 1 && bone_coord >= 2
-    plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
-else
-    plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
-end
-hold on
-plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'.b')
-xlabel('X')
-ylabel('Y')
-zlabel('Z')
-axis equal
+% figure()
+% if bone_indx == 1 && bone_coord >= 2
+%     plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
+% else
+%     plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
+% end
+% hold on
+% plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'.b')
+% xlabel('X')
+% ylabel('Y')
+% zlabel('Z')
+% axis equal

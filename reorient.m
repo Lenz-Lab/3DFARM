@@ -32,6 +32,10 @@ nodes_coords_final_i3 = (nodes_coords_final_i4' - repmat(RTs.iT,1,length(nodes_c
 nodes_coords_final_i2 = ((RTs.iR)\(nodes_coords_final_i3'))';
 nodes_coords_final_i1 = ((nodes_coords_final_i2)/(RTs.iflip));
 
+if isempty(RTs.Rmetpca) == 0
+    nodes_coords_final_i1 = (RTs.Rmetpca' * nodes_coords_final_i1')';
+end
+
 if isempty(RTs.red) == 0
     nodes_coords_final_i1_red = ((RTs.red)\(nodes_coords_final_i1'))';
     nodes_coords_final_i1 = ((RTs.yellow)\(nodes_coords_final_i1_red'))';

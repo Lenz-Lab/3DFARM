@@ -101,7 +101,7 @@ for n = 1:length(bone_coord)
     % fig_height = 600;
     % fig_left = (screen_size(3) - fig_width) / 2;
     % fig_bottom = (screen_size(4) - fig_height) / 2;
-    %
+    % 
     % fig1 = figure('Position', [fig_left, fig_bottom+15, fig_width, fig_height]);
     % Final_Bone = triangulation(conlist,nodes_original);
     % patch('Faces',Final_Bone.ConnectivityList,'Vertices',Final_Bone.Points,...
