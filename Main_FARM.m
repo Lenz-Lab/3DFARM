@@ -40,10 +40,10 @@ names = data{1, :};
 % Lists for detemining bone and side
 list_bone = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
     'Lateral_Cuneiform','Metatarsal1','Metatarsal2','Metatarsal3','Metatarsal4','Metatarsal5',...
-    'Tibia','Fibula','BB_Med','BB_Lat'};
+    'Tibia','Fibula','ANKM','ANK'};
 list_bone2 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','First_Metatarsal','Second_Metatarsal','Third_Metatarsal','Fourth_Metatarsal','Fifth_Metatarsal',...
-    'Tibia','Fibula','BB_Med','BB_Lat'};
+    'Tibia','Fibula','ANKM','ANK'};
 list_side_folder = {'Right','_R.','_R_','Left','_L.','_L_'};
 list_side = {'Right','Left'};
 
@@ -224,8 +224,8 @@ for col = 1:width(data)
     if ismember(13, all_bone_indx) && ismember(15, all_bone_indx) && ismember(16, all_bone_indx) % MFM Tibia AP
 
             % Convert the input strings to numeric arrays by removing any commas
-            lateral_tibial_points = mean(bonestl.BB_Lat.Points);
-            medial_tibial_points = mean(bonestl.BB_Med.Points);
+            lateral_tibial_points = mean(bonestl.ANK.Points);
+            medial_tibial_points = mean(bonestl.ANKM.Points);
 
             % Assuming lateral_tibial_points and medial_tibial_points are already inputted
 
