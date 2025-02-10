@@ -97,6 +97,9 @@ plot3(x_intersect,y_intersect, new_talus_point(3), '.', 'MarkerSize', 30);
 
 % use distance formula to calculate distance between points
 talus_distance = sqrt((new_talus_point(1)-x_intersect)^2 + (new_talus_point(2)-y_intersect)^2 + (new_talus_point(3)-new_talus_point(3))^2);
+if new_talus_point(1) < x_intersect
+    talus_distance = talus_distance * -1;
+end
 foot_distance = sqrt((endC(1)-startA(1))^2 + (endC(2)-startA(2))^2 + (endC(3)-startA(3))^2);
 FAO = talus_distance/foot_distance;
 
