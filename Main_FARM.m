@@ -44,6 +44,9 @@ list_bone = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','In
 list_bone2 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','First_Metatarsal','Second_Metatarsal','Third_Metatarsal','Fourth_Metatarsal','Fifth_Metatarsal',...
     'Tibia','Fibula','ANKM','ANK'};
+list_bone3 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
+    'Lateral_Cuneiform','Metatarsal_1','Metatarsal_2','Metatarsal_3','Metatarsal_4','Metatarsal_5',...
+    'Tibia','Fibula','ANKM','ANK'};
 list_side_folder = {'Right','_R.','_R_','Left','_L.','_L_'};
 list_side = {'Right','Left'};
 
@@ -66,7 +69,7 @@ for col = 1:width(data)
         % Looks through the file name for the bone name
         if ~exist('bone_indx', 'var')
             for n = 1:length(list_bone)
-                if contains(lower(FileName), lower(list_bone{n})) || contains(lower(FileName), lower(list_bone2{n}))
+                if contains(lower(FileName), lower(list_bone{n})) || contains(lower(FileName), lower(list_bone2{n})) || contains(lower(FileName), lower(list_bone3{n}))
                     bone_indx = n;
                     break;
                 end
@@ -101,8 +104,8 @@ for col = 1:width(data)
 
         % Load in file based on file type
         if strcmp(ext, '.stl')
-            TR = stlread(fullfile(folder_path, FileName));
-            % TR = stlread(fullfile(FileName));
+            % TR = stlread(fullfile(folder_path, FileName));
+            TR = stlread(fullfile(FileName));
             nodes = TR.Points;
             conlist = TR.ConnectivityList;
 
@@ -424,9 +427,10 @@ for col = 1:width(data)
         "Talonavicular Offset Angle XY",
         "Talonavicular Offset Angle YZ",
         "Meary's Angle (Axial)",
-        "Meary's Angle (Sagittal)"
-        "Talonavicular Angle"
-        "Foot and Ankle Offset (%)"
+        "Meary's Angle (Sagittal)",
+        "Talonavicular Angle",
+        "Foot and Ankle Offset (%)",
+        "Intermetatarsal 1-2"
         ];
 
     if length(ind_name) > 31
