@@ -52,7 +52,7 @@ for n = 1:length(bone_coord)
     % medial region is in the positive X direction.
     [nodes,cm_nodes] = center(nodes,1);
     better_start = 1;
-    [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start);
+    [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start, 1);
 
     %% Performs coordinate system calculation
     [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
@@ -79,7 +79,7 @@ for n = 1:length(bone_coord)
     [~, coords_final, coords_final_unit, ~, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
 
     if bone_indx == 1 && bone_coord(n) == 3 % Additional alignment for talus subtalar ACS
-        [aligned_nodes_TST, RTs_TST] = icp_template(bone_indx, nodes, 1, better_start);
+        [aligned_nodes_TST, RTs_TST] = icp_template(bone_indx, nodes, 1, better_start, 1);
         [Temp_Coordinates_TST, Temp_Nodes_TST] = CoordinateSystem(aligned_nodes_TST, bone_indx, 1, side_indx);
 
         Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; FAO_peak; z_min_xyz; MEARY;  HindFront; MDTA; TLSA; SVA];
