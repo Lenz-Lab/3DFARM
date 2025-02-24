@@ -17,7 +17,6 @@ sheet_path = fullfile(folder_path, filename);
 
 % Get list of sheets
 sheets = sheetnames(sheet_path);
-
 % If there is more than one sheet, ask the user to select one
 if length(sheets) > 1
     [sheet_idx, tf] = listdlg('PromptString', 'Select a sheet:', 'SelectionMode', 'single', 'ListString', sheets);
