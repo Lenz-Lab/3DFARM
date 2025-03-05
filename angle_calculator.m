@@ -1,28 +1,43 @@
-function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plane, side_indx, varargin)
+function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plane, side_indx, viewer, varargin)
 
     % Check if 'measurement' was provided (using varargin for optional input)
-    if nargin > 8
+    if nargin > 9
         measurement = varargin{1};
     else
         measurement = '';  % Default to an empty string or any default value
     end
 
     if plane == "yz"
-        viewv = [90 0];
+        % viewv = [90 0];
         ref_axis = [1, 0, 0]; % X-axis as the reference for YZ plane (Plantarflexion/Dorsiflexion)
     elseif plane == "xz"
-        viewv = [0 0];
+        % viewv = [0 0];
         ref_axis = [0, 1, 0]; % Y-axis as the reference for XZ plane (Inversion/Eversion)
     elseif plane == "xy"
-        viewv = [90 90];
+        % viewv = [90 90];
         ref_axis = [0, 0, 1]; % Z-axis as the reference for XY plane (Internal/External rotation)
     else
-        viewv = [90 90];
+        % viewv = [90 90];
         ref_axis = [0, 0, 0]; % No reference for 3D case
     end
 
+    vector_A = viewer(:,4:6) - viewer(:,1:3);
+    vector_B = viewer(10:12) - viewer(:,7:9);
+
+    % Compute the cross product vector.
+    crossVec = cross(vector_A, vector_B);
+
+    % Normalize the cross product vector.
+    crossVec_norm = crossVec / norm(crossVec);
+
+    targetPoint = viewer(:,1:3);
+    distance = 100;
+
+    % Set the camera position along the cross product vector.
+    camPos = targetPoint + distance * crossVec_norm;
+
     % If measurement is specified, adjust the ref_axis accordingly
-    if strcmp(measurement, "MFMTibSag") || strcmp(measurement, "SVA")
+    if strcmp(measurement, "SVA")
         ref_axis = [0, 0, 1];
     end
 
@@ -40,13 +55,16 @@ function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plan
         'FaceLighting','gouraud',...
         'AmbientStrength', 0.15);
     alpha(0.5)
-    view(viewv)
+    % view(viewv)
+    % Set camera properties:
+    camtarget(targetPoint);   % The point the camera looks at
+    campos(camPos);           % Position the camera along the cross product direction
     camlight HEADLIGHT
     material('dull');
     axis equal
     axis off
     set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
-    
+
     plot_arrow(startA, endA, [0 0 1]);
     plot_arrow(startB, endB, [1 0 0]);
 
