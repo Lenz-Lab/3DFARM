@@ -269,7 +269,6 @@ for col = 1:width(data)
         angles.Intermet12 = NaN;
     end
 
-
     %% Save Angles
     A = [
         "Talocalcaneal Angle",

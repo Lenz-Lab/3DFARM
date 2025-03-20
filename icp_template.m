@@ -9,7 +9,7 @@ function [aligned_nodes, RTs] = icp_template(bone_indx,nodes,bone_coord,better_s
 addpath('Template_Bones\')
 addpath('Template_Bones\All_Template\')
 if template_version == 1
-    %% Read in Template Bone
+    % Read in Template Bone
     if bone_indx == 1 && bone_coord == 1 % TN
         TR_template = stlread('Talus_Template.stl');
         a = 2;
@@ -22,7 +22,9 @@ if template_version == 1
         TR_template = stlread('Calcaneus_Template.stl');
         a = 2;
     elseif bone_indx == 2 && bone_coord == 2
-        TR_template = stlread('Calcaneus_Template2.stl');
+        TR_template = stlread('Calcaneus_Template.stl');
+        TR_template2 = stlread('Calcaneus_Template2.stl');
+        nodes_template2 = TR_template2.Points;
         a = 2;
     elseif bone_indx == 3
         TR_template = stlread('Navicular_Template.stl');
@@ -68,7 +70,7 @@ if template_version == 1
         a = 3;
     end
 elseif template_version == 2
-    %% Read in Template Bone
+    % Read in Template Bone
     if bone_indx == 1 && bone_coord == 1 % TN
         TR_template = stlread('Talus_Initial.stl');
         a = 2;
@@ -117,7 +119,7 @@ end
 nodes_template = TR_template.Points;
 con_temp = TR_template.ConnectivityList;
 
-if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) % Use PCA to give a starting alignment point for metatarsals and talus
+if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
     [eigenvectors, ~] = eig(cov(nodes));
 
     [~, idx] = sort(diag(cov(nodes)), 'descend');
@@ -192,27 +194,27 @@ else
 end
 
 % Similar process as above for cropped metatarsals
-if bone_indx >= 8 && bone_indx <= 12
-    nodes_template_length = (max(nodes_template(:,a)) - min(nodes_template(:,a)));
-    if nodes_template_length/1.25 > max_nodes_length
-        temp = find(nodes_template(:,2) < (min(nodes_template(:,a)) + max_nodes_length));
-        nodes_template = [nodes_template(temp,1) nodes_template(temp,2) nodes_template(temp,3)];
-        x = (-10:1:10)';
-        z = (-10:1:10)';
-        [x, z] = meshgrid(x,z);
-        y = (min(nodes_template(:,a)) + max_nodes_length) .* ones(length(x(:,1)),1);
-        k = 1;
-        for n = 1:length(y)
-            for m = 1:length(y)
-                plane(k,:) = [x(m,n) y(1) z(m,n)];
-                k = k + 1;
-            end
-        end
-
-        nodes_template = [nodes_template(:,1) nodes_template(:,2) nodes_template(:,3);
-            plane(:,1) plane(:,2) plane(:,3)];
-    end
-end
+% if bone_indx >= 8 && bone_indx <= 12
+%     nodes_template_length = (max(nodes_template(:,a)) - min(nodes_template(:,a)));
+%     if nodes_template_length/1.25 > max_nodes_length
+%         temp = find(nodes_template(:,2) < (min(nodes_template(:,a)) + max_nodes_length));
+%         nodes_template = [nodes_template(temp,1) nodes_template(temp,2) nodes_template(temp,3)];
+%         x = (-10:1:10)';
+%         z = (-10:1:10)';
+%         [x, z] = meshgrid(x,z);
+%         y = (min(nodes_template(:,a)) + max_nodes_length) .* ones(length(x(:,1)),1);
+%         k = 1;
+%         for n = 1:length(y)
+%             for m = 1:length(y)
+%                 plane(k,:) = [x(m,n) y(1) z(m,n)];
+%                 k = k + 1;
+%             end
+%         end
+% 
+%         nodes_template = [nodes_template(:,1) nodes_template(:,2) nodes_template(:,3);
+%             plane(:,1) plane(:,2) plane(:,3)];
+%     end
+% end
 
 % Determines maximum axis of bone model and compares it to the template
 multiplier = (max(nodes_template(:,a)) - min(nodes_template(:,a)))/(max(nodes(:,b)) - min(nodes(:,b)));
@@ -402,6 +404,16 @@ else
     sR_talus = [];
 end
 
+% This loop performs an alignment for the ST CS of the calcaneus
+if bone_indx == 2 && bone_coord == 2
+    [sR_calcaneus] = [0.860959988377867	-0.205927537491042	-0.465125518236977
+        0.508647238197964	0.357673459109972	0.783165170140921
+        0.00508777809228038	-0.910858686049157	0.412687010412114];
+    aligned_nodes = (sR_calcaneus*(aligned_nodes'))';
+else
+    sR_calcaneus = [];
+end
+
 % This undoes the enlargening of the users model
 if multiplier > 1
     aligned_nodes = aligned_nodes/multiplier;
@@ -504,25 +516,28 @@ RTs.sflip = sflip; % secondary flip (for tibia) tib_flip
 RTs.iR = iR; % initial rotation Rot
 RTs.iT = iT; %initial translation Tra
 RTs.sR_talus = sR_talus; % secondary rotation (for talus) Rr
+RTs.sR_calcaneus = sR_calcaneus; % secondary rotation (for calcaneus) Rr
 RTs.sR_tibia = sR_tibia; % secondary rotation (for tibia) Rtw
 RTs.sT_tibia = sT_tibia; % secondary translation (for tibia) Ttw
 RTs.sR_fibula = sR_fibula; % secondary rotation (for fibula) Rtw
 RTs.sT_fibula = sT_fibula; % secondary translation (for fibula) Ttw
 RTs.cm_meta = cm_meta; % centering metatarsals cm_meta
-RTs.Rmetpca = Rmetpca; % initial metatarsal PCA alignment
+RTs.Rmetpca = Rmetpca; % initial PCA alignment
 RTs.red = [];
 RTs.yellow = [];
 
 %% Visualize proper alignment
-% figure()
-% if bone_indx == 1 && bone_coord >= 2
-%     plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
-% else
-%     plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
-% end
-% hold on
-% plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'.b')
-% xlabel('X')
-% ylabel('Y')
-% zlabel('Z')
-% axis equal
+figure()
+if bone_indx == 1 && bone_coord >= 2
+    plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
+elseif  bone_indx == 2 && bone_coord == 2
+    plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
+else
+    plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
+end
+hold on
+plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'.b')
+xlabel('X')
+ylabel('Y')
+zlabel('Z')
+axis equal

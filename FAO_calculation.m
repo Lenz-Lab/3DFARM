@@ -1,4 +1,4 @@
-function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, bone4, plane, talus_point, z_min_coords)
+function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, bone4, plane, talus_point, z_min_coords, viewer)
     % FAO_calculation computes the foot and ankle offset based on given geometries.
     % Inputs:
     % - startA, endA: Vectors defining the first reference direction.
@@ -11,10 +11,27 @@ function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, 
     % - FAO: Calculated foot and ankle offset.
     % Validate plane input and set the view
     if plane == "xy"
-        viewv = [0 90];
+        % viewv = [0 90];
     else
         error('Currently, only the "xy" plane is supported.');
     end
+
+    vector_A = viewer(:,4:6) - viewer(:,1:3);
+    vector_B = viewer(10:12) - viewer(:,7:9);
+
+    % Compute the cross product vector.
+    crossVec = cross(vector_A, vector_B);
+
+    % Normalize the cross product vector.
+    crossVec_norm = crossVec / norm(crossVec);
+
+    targetPoint = viewer(:,1:3);
+    distance = 100;
+
+    % Set the camera position along the cross product vector.
+    camPos = targetPoint + distance * crossVec_norm;
+
+
     % Nested function to calculate the angle between two vectors
     function angle_between = calculate_angle_between(startA, endA, startB, endB)
         vector1 = endA - startA;
@@ -48,7 +65,10 @@ function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, 
     plot_bone(bone2);
     plot_bone(bone3);
     plot_bone(bone4);
-    view(viewv);
+    % view(viewv);
+    % Set camera properties:
+    camtarget(targetPoint);   % The point the camera looks at
+    campos(camPos);           % Position the camera along the cross product direction
     camlight HEADLIGHT;
     material dull;
     axis equal;
