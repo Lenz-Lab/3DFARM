@@ -149,9 +149,13 @@ for col = 1:width(data)
             AAFACT_bone = list_bone{all_bone_indx(j)};
             % Perform the AAFACT calculation
             out.(AAFACT_bone) = AAFACT_calculation(bonestl.(AAFACT_bone), all_bone_indx(j), side_indx);
+        else
+            AAFACT_bone = list_bone{all_bone_indx(j)};
+            % Add filler for unused bones
+            out.(AAFACT_bone) = [0 0 0];
         end
     end
-    
+
     %% Check Alignment
     % Compute the rotation matrix using reorient90
     rotmat = reorient90(out); % Ensure 'out' is properly defined before this
