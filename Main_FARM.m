@@ -302,22 +302,8 @@ for col = 1:width(data)
     xlfilename = strcat(folder_path,'Radiograph_Measurements_', FolderName, '.xlsx');
     writematrix(A,xlfilename,'Sheet',ind_name);
     writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
-
-    % Determine the number of rows in your new data.
-    numDataRows = max(numel(A), numel(values));
-
-    % Specify a row that definitely covers any previously written data.
-    maxRow = 100; % adjust this if you think there might be more rows
-
-    % Create a blank cell array (here using empty strings)
-    numBlankRows = maxRow - numDataRows;
-    if numBlankRows > 0
-        blankCells = repmat("", numBlankRows, 3); % here 3 columns; adjust as needed
-        % Write these blank cells starting right after your data
-        startRow = numDataRows + 1;
-        % For example, writing from B(startRow)
-        writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', sprintf('B%d', startRow));
-    end
+    blankCells = repmat("", 37, 2); % here 3 columns; adjust as needed
+    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A14:B50');
 end
 
 delete(gcp('nocreate')); % Stops the pool if it's running, does nothing if not
