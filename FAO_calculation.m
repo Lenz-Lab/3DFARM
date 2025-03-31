@@ -75,6 +75,8 @@ function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, 
     xlabel('x');
     ylabel('y');
     zlabel('z');
+        axis off
+    set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
     % Plot the original talus point
     plot3(talus_point(:, 1), talus_point(:, 2), talus_point(:, 3), '.', 'MarkerSize', 30);
     % Project the talus point onto the z-plane triangle
