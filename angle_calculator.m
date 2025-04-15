@@ -34,7 +34,7 @@ function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plan
     distance = 100;
 
     % Set the camera position along the cross product vector.
-    camPos = targetPoint + distance * crossVec_norm;
+    camPos = targetPoint + distance * crossVec_norm
 
     % If measurement is specified, adjust the ref_axis accordingly
     if strcmp(measurement, "SVA")

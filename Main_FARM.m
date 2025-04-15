@@ -158,7 +158,8 @@ for col = 1:width(data)
 
     %% Check Alignment
     % Compute the rotation matrix using reorient90
-    rotmat = reorient90(out); % Ensure 'out' is properly defined before this
+    % rotmat = reorient90(out); % Ensure 'out' is properly defined before this
+    rotmat = reorientglobal(out); % Ensure 'out' is properly defined before this
 
     % Create a new structure for rotated bones
     bonestl_rotated = struct();
@@ -179,9 +180,18 @@ for col = 1:width(data)
     end
 
     %% Angle Calculations
-    YZ_viewer = [out_rotated.Talus(1,:), out_rotated.Talus(2,:), out_rotated.Talus(3,:), out_rotated.Talus(4,:)];
-    XZ_viewer = [out_rotated.Talus(3,:), out_rotated.Talus(4,:), out_rotated.Talus(5,:), out_rotated.Talus(6,:)];
-    XY_viewer = [out_rotated.Talus(5,:), out_rotated.Talus(6,:), out_rotated.Talus(1,:), out_rotated.Talus(2,:)];
+    av_origin = (out_rotated.Talus(1,:) + out_rotated.Calcaneus(1,:) + out_rotated.Metatarsal1(1,:))/3;
+    av_Y = (out_rotated.Talus(2,:) + out_rotated.Calcaneus(2,:) + out_rotated.Metatarsal1(2,:))/3;
+    av_Z = (out_rotated.Talus(4,:) + out_rotated.Calcaneus(4,:) + out_rotated.Metatarsal1(4,:))/3;
+    av_X = (out_rotated.Talus(6,:) + out_rotated.Calcaneus(6,:) + out_rotated.Metatarsal1(6,:))/3;
+
+    YZ_viewer = [av_origin, av_Y, av_origin, av_Z];
+    XZ_viewer = [av_origin, av_X, av_origin, av_Z];
+    XY_viewer = [av_origin, av_X, av_origin, av_Y];
+
+    % YZ_viewer = [out_rotated.Talus(1,:), out_rotated.Talus(2,:), out_rotated.Talus(3,:), out_rotated.Talus(4,:)];
+    % XZ_viewer = [out_rotated.Talus(3,:), out_rotated.Talus(4,:), out_rotated.Talus(5,:), out_rotated.Talus(6,:)];
+    % XY_viewer = [out_rotated.Talus(5,:), out_rotated.Talus(6,:), out_rotated.Talus(1,:), out_rotated.Talus(2,:)];
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Talocalcaneal Angle
         angles.TCA = angle_calculator(out_rotated.Talus(7,:), out_rotated.Talus(8,:), out_rotated.Calcaneus(7,:), out_rotated.Calcaneus(8,:), bonestl_rotated.Talus, bonestl_rotated.Calcaneus, "yz", side_indx, YZ_viewer);
