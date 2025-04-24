@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY, NGA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 
@@ -136,7 +136,11 @@ if vis == 1
 end
 
 % Positive X nth ROI MDTA
-nth_x = range_x/4;
+if bone_indx == 3
+    nth_x = range_x/10;
+else
+    nth_x = range_x/4;
+end
 
 positive_x_nth = x_max - nth_x;
 
@@ -209,18 +213,18 @@ while any(isnan(av_positive_z_nth_hindfront))
         error('Could not find valid values. Dividers became too small.');
     end
     
-    % % Optional Visualization
-    % if vis == 1
-    %     figure()
-    %     plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
-    %     hold on
-    %     plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
-    %     plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
-    %     xlabel('X')
-    %     ylabel('Y')
-    %     zlabel('Z')
-    %     axis equal
-    % end
+    % Optional Visualization
+    if vis == 1
+        figure()
+        plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
+        hold on
+        plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
+        plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
+        xlabel('X')
+        ylabel('Y')
+        zlabel('Z')
+        axis equal
+    end
 end
 
 av_negative_z_nth_hindfront = [NaN NaN NaN];
@@ -266,18 +270,18 @@ while any(isnan(av_negative_z_nth_hindfront))
         error('Could not find valid values. Dividers became too small.');
     end
     
-    % % Optional Visualization
-    % if vis == 1
-    %     figure()
-    %     plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
-    %     hold on
-    %     plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
-    %     plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
-    %     xlabel('X')
-    %     ylabel('Y')
-    %     zlabel('Z')
-    %     axis equal
-    % end
+    % Optional Visualization
+    if vis == 1
+        figure()
+        plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
+        hold on
+        plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
+        plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
+        xlabel('X')
+        ylabel('Y')
+        zlabel('Z')
+        axis equal
+    end
 end
 
 %% Just for MEARY 
@@ -547,6 +551,12 @@ else
     MEARY = [0,0,0; 0,0,0];
 end
 
+if bone_indx == 3
+    NGA = av_positive_x_nth_mdta;
+else
+    NGA = [0,0,0];
+end
+
 origin = [0,0,0];
 
 % Define the primary axis based on first_point and second_point
@@ -623,26 +633,26 @@ end
 
 %% FAO
 if bone_indx == 8
-     anterior_y_nth = y_max - range_y/2;
-     anterior_y_nth_ROI = aligned_nodes(:,2) >= anterior_y_nth;
-     anterior_y_nth_z = nonzeros(aligned_nodes(:,3).*anterior_y_nth_ROI);
-     z_min_met1 = min(anterior_y_nth_z);
-     z_point_index = find(aligned_nodes(:,3) == z_min_met1);
-     z_min_xyz = aligned_nodes(z_point_index,:);
+    anterior_y_nth = y_max - range_y/2;
+    anterior_y_nth_ROI = aligned_nodes(:,2) >= anterior_y_nth;
+    anterior_y_nth_z = nonzeros(aligned_nodes(:,3).*anterior_y_nth_ROI);
+    z_min_met1 = min(anterior_y_nth_z);
+    z_point_index = find(aligned_nodes(:,3) == z_min_met1);
+    z_min_xyz = aligned_nodes(z_point_index,:);
 elseif bone_indx == 12
-     anterior_y_nth = y_max - range_y/2;
-     anterior_y_nth_ROI = aligned_nodes(:,2) >= anterior_y_nth;
-     anterior_y_nth_z = nonzeros(aligned_nodes(:,3).*anterior_y_nth_ROI);
-     z_min_met5 = min(anterior_y_nth_z);
-     z_point_index = find(aligned_nodes(:,3) == z_min_met5);
-     z_min_xyz = aligned_nodes(z_point_index,:);
+    anterior_y_nth = y_max - range_y/2;
+    anterior_y_nth_ROI = aligned_nodes(:,2) >= anterior_y_nth;
+    anterior_y_nth_z = nonzeros(aligned_nodes(:,3).*anterior_y_nth_ROI);
+    z_min_met5 = min(anterior_y_nth_z);
+    z_point_index = find(aligned_nodes(:,3) == z_min_met5);
+    z_min_xyz = aligned_nodes(z_point_index,:);
 elseif bone_indx == 2 && bone_coord == 1
-          posterior_y_nth = y_min + range_y/2;
-     posterior_y_nth_ROI = aligned_nodes(:,2) <= posterior_y_nth;
-     posterior_y_nth_z = nonzeros(aligned_nodes(:,3).*posterior_y_nth_ROI);
-     z_min_calc = min(posterior_y_nth_z);
-     z_point_index = find(aligned_nodes(:,3) == z_min_calc);
-     z_min_xyz = aligned_nodes(z_point_index,:);
+    posterior_y_nth = y_min + range_y/2;
+    posterior_y_nth_ROI = aligned_nodes(:,2) <= posterior_y_nth;
+    posterior_y_nth_z = nonzeros(aligned_nodes(:,3).*posterior_y_nth_ROI);
+    z_min_calc = min(posterior_y_nth_z);
+    z_point_index = find(aligned_nodes(:,3) == z_min_calc);
+    z_min_xyz = aligned_nodes(z_point_index,:);
 
     % figure()
     % plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
@@ -654,8 +664,8 @@ elseif bone_indx == 2 && bone_coord == 1
     % zlabel('Z')
     % axis equal
 
-else 
+else
     if isempty(z_min_xyz)
-    z_min_xyz = [0,0,0];
+        z_min_xyz = [0,0,0];
     end
 end

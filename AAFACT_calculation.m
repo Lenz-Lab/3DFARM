@@ -2,7 +2,7 @@ function out = AAFACT_calculation(TR_bone, bone_indx, side_indx)
 
 %% Initialize 'out'
 % Define the size mapping for initialization based on bone_indx
-size_mapping = containers.Map({1, 2, 8, 12, 13}, {21, 16, 7, 7, 10}); % Default to 6 if not specified
+size_mapping = containers.Map({1, 2, 3, 8, 12, 13}, {21, 16, 7, 7, 7, 10}); % Default to 6 if not specified
 default_size = 6;
 
 if isKey(size_mapping, bone_indx)
@@ -55,7 +55,7 @@ for n = 1:length(bone_coord)
     [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start, 1);
 
     %% Performs coordinate system calculation
-    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
+    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY, NGA] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
 
     %% Joint Origin
     if joint_indx > 1
@@ -73,18 +73,18 @@ for n = 1:length(bone_coord)
     end
 
     %% Temporarily Attach Coordinate System
-    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; FAO_peak; z_min_xyz; MEARY; HindFront; MDTA; TLSA; SVA];
+    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; NGA; FAO_peak; z_min_xyz; MEARY; HindFront; MDTA; TLSA; SVA];
 
     %% Reorient and Translate to Original Input Origin and Orientation
-    [~, coords_final, coords_final_unit, ~, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
+    [~, coords_final, coords_final_unit, ~, NGA_final, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
 
     if bone_indx == 1 && bone_coord(n) == 3 % Additional alignment for talus subtalar ACS
         [aligned_nodes_TST, RTs_TST] = icp_template(bone_indx, nodes, 1, better_start, 1);
         [Temp_Coordinates_TST, Temp_Nodes_TST] = CoordinateSystem(aligned_nodes_TST, bone_indx, 1, side_indx);
 
-        Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; FAO_peak; z_min_xyz; MEARY;  HindFront; MDTA; TLSA; SVA];
+        Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; NGA; FAO_peak; z_min_xyz; MEARY;  HindFront; MDTA; TLSA; SVA];
 
-        [~, coords_final_TST, coords_final_unit_TST, ~, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords_TST, cm_nodes, side_indx, RTs_TST);
+        [~, coords_final_TST, coords_final_unit_TST, ~, NGA_final, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords_TST, cm_nodes, side_indx, RTs_TST);
 
         coords_final = [coords_final(1,:); ((coords_final_TST(2,:) + coords_final(2,:)).'/2)'
             coords_final(3,:); ((coords_final_TST(4,:) + coords_final(4,:)).'/2)'
@@ -157,6 +157,7 @@ for n = 1:length(bone_coord)
             end
         case 3 % Navicular
             out(1:6, :) = coords_final_unit;
+            out(7, :) = NGA_final;
         case 8 % Metatarsal 1
             out(1:6, :) = coords_final_unit;
             out(7, :) = z_min_xyz_final;
