@@ -16,10 +16,10 @@ function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plan
         ref_axis = [1, 0, 0]; % X-axis as the reference for YZ plane (Plantarflexion/Dorsiflexion)
     elseif plane == "xz"
         viewv = [0 0];
-        ref_axis = [0, 1, 0]; % Y-axis as the reference for XZ plane (Inversion/Eversion)
+        ref_axis = [0, -1, 0]; % Y-axis as the reference for XZ plane (Inversion/Eversion)
     elseif plane == "xy"
         viewv = [0 90];
-        ref_axis = [0, 0, 1]; % Z-axis as the reference for XY plane (Internal/External rotation)
+        ref_axis = [0, 0, -1]; % Z-axis as the reference for XY plane (Internal/External rotation)
     else
         viewv = [90 90];
         ref_axis = [0, 0, 0]; % No reference for 3D case
@@ -62,9 +62,9 @@ function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plan
     material('dull');
     axis equal
     axis off
-    % xlabel('x')
-    % ylabel('y')
-    % zlabel('z')
+    xlabel('x')
+    ylabel('y')
+    zlabel('z')
     set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
 
     plot_arrow(startA, endA, [0 0 1]);
@@ -101,32 +101,36 @@ function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plan
         dot_product = dot(vector1_new, vector2_new);
 
         % Calculate the angle using atan2d
-        angle_between = atan2d(norm(cross_product), dot_product);
+        % angle_between = atan2d(norm(cross_product), dot_product);
+        % angle_between = atan2d(cross_product(1), dot_product);
 
         % Adjust for lateralities (mirroring behavior for left bones)
         if plane == "yz"
             % Plantarflexion (negative) vs. Dorsiflexion (positive) - no mirroring needed
+            angle_between = atan2d(cross_product(1), dot_product);
             % sign_of_angle = dot(cross_product, ref_axis);
             % if sign_of_angle > 0
             %     angle_between = -angle_between;
             % end
         elseif plane == "xy"
             % Internal (negative) vs. External (positive) rotation - mirrored for left side
+            angle_between = atan2d(cross_product(3), dot_product);
             sign_of_angle = dot(cross_product, ref_axis);
-            if sign_of_angle > 0
-                angle_between = -angle_between;
-            end
+            % if sign_of_angle > 0
+                % angle_between = -angle_between;
+            % end
             if side_indx == 2  % Left bone
                 angle_between = -angle_between;  % Mirror for left side
             end
         elseif plane == "xz"
             % Inversion (negative) vs. Eversion (positive) - mirrored for left side
+            angle_between = atan2d(cross_product(2), dot_product);
             sign_of_angle = dot(cross_product, ref_axis);
             if sign_of_angle > 0
                 angle_between = -angle_between;
             end
             if side_indx == 2  % Left bone
-                angle_between = -angle_between;  % Mirror for left side
+                % angle_between = -angle_between;  % Mirror for left side
             end
         end
     end

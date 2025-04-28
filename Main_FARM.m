@@ -246,7 +246,11 @@ for col = 1:width(data)
     end
 
     if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Talar Tilt Angle
-        angles.TTA = angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(6,:), out_rotated.Talus(23,:), out_rotated.Talus(22,:), bonestl_transformed.Tibia, bonestl_transformed.Talus, "xz", side_indx, XZ_viewer);
+        if side_indx == 1
+            angles.TTA = angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(6,:), out_rotated.Talus(22,:), out_rotated.Talus(23,:), bonestl_transformed.Tibia, bonestl_transformed.Talus, "xz", side_indx, XZ_viewer);
+        else
+            angles.TTA = angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(6,:), out_rotated.Talus(23,:), out_rotated.Talus(22,:), bonestl_transformed.Tibia, bonestl_transformed.Talus, "xz", side_indx, XZ_viewer);
+        end
     else
         angles.TTA = NaN;
     end
@@ -258,7 +262,7 @@ for col = 1:width(data)
     end
 
     if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Medial Distal Tibial Angle
-        angles.MDTA = angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(4,:), out_rotated.Tibia(7,:), out_rotated.Tibia(8,:), bonestl_transformed.Tibia, bonestl_transformed.Tibia, "xz", side_indx, XZ_viewer);
+        angles.MDTA = abs(angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(4,:), out_rotated.Tibia(7,:), out_rotated.Tibia(8,:), bonestl_transformed.Tibia, bonestl_transformed.Tibia, "xz", side_indx, XZ_viewer));
     else
         angles.MDTA = NaN;
     end
@@ -270,7 +274,7 @@ for col = 1:width(data)
     end
 
     if ismember(1,all_bone_indx) % Talar Neck Offset Angle XY
-        angles.TNOAXY = angle_calculator(out_rotated.Talus(13,:), out_rotated.Talus(14,:), out_rotated.Talus(1,:), out_rotated.Talus(2,:), bonestl_transformed.Talus, bonestl_transformed.Talus, "xy", side_indx, XY_viewer);
+        angles.TNOAXY = abs(angle_calculator(out_rotated.Talus(1,:), out_rotated.Talus(2,:), out_rotated.Talus(13,:), out_rotated.Talus(14,:), bonestl_transformed.Talus, bonestl_transformed.Talus, "xy", side_indx, XY_viewer));
     else
         angles.TNOAXY = NaN;
     end
@@ -282,7 +286,7 @@ for col = 1:width(data)
     % end
 
     if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's Axial
-        angles.MA_axial = angle_calculator(out_rotated.Talus(13,:), out_rotated.Talus(14,:), out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), bonestl_transformed.Talus, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+        angles.MA_axial = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Talus(13,:), out_rotated.Talus(14,:),  bonestl_transformed.Talus, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
     else
         angles.MA_axial = NaN;
     end
@@ -294,7 +298,7 @@ for col = 1:width(data)
     end
 
     if ismember (1,all_bone_indx) && ismember(3,all_bone_indx) % Talonavicular Angle
-        angles.TNA = angle_calculator(out_rotated.Talus(13,:), out_rotated.Talus(14,:), out_rotated.Navicular(1,:), out_rotated.Navicular(2,:), bonestl_transformed.Navicular, bonestl_transformed.Talus,"xy", side_indx, XY_viewer);
+        angles.TNA = angle_calculator( out_rotated.Navicular(1,:), out_rotated.Navicular(2,:),out_rotated.Talus(13,:), out_rotated.Talus(14,:), bonestl_transformed.Navicular, bonestl_transformed.Talus,"xy", side_indx, XY_viewer);
     else
         angles.TNA = NaN;
     end
@@ -307,7 +311,7 @@ for col = 1:width(data)
     end
 
     if ismember (8,all_bone_indx) && ismember(9,all_bone_indx) % 1-2 Intermetatarsal
-        angles.Intermet12 = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal2,"xy", side_indx, XY_viewer);
+        angles.Intermet12 = abs(angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal2,"xy", side_indx, XY_viewer));
     else
         angles.Intermet12 = NaN;
     end
@@ -336,7 +340,7 @@ for col = 1:width(data)
     end
 
     if ismember(13,all_bone_indx) && ismember(2,all_bone_indx) % Tibiocalcaneal Angle
-        angles.TibCA = angle_calculator(out_rotated.Tibia(3,:), out_rotated.Tibia(4,:), out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.Tibia, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
+        angles.TibCA = angle_calculator( out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), out_rotated.Tibia(3,:), out_rotated.Tibia(4,:), bonestl_transformed.Tibia, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
     else
         angles.TibCA = NaN;
     end
