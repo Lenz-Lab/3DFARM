@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY, NGA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY, NGA, TTA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 
@@ -47,6 +47,65 @@ elseif bone_indx >= 8 && bone_indx <= 12 % Metatarsals
     n = 3;
 elseif bone_indx == 13 || bone_indx == 14 % Tibia or Fibula
     n = 3;
+end
+
+%% Just for TTA
+% Positive X Nth ROI TTA
+nth_z = range_z/7;
+
+positive_z_nth = z_max - nth_z;
+
+positive_z_nth_ROI = (aligned_nodes(:,3) >= positive_z_nth) & (aligned_nodes(:,1) >= 5);
+
+positive_z_nth_x = nonzeros(aligned_nodes(:,1).*positive_z_nth_ROI);
+positive_z_nth_y = nonzeros(aligned_nodes(:,2).*positive_z_nth_ROI);
+positive_z_nth_z = nonzeros(aligned_nodes(:,3).*positive_z_nth_ROI);
+
+av_positive_z_nth_x = mean(positive_z_nth_x);
+av_positive_z_nth_y = mean(positive_z_nth_y);
+av_positive_z_nth_z = mean(positive_z_nth_z);
+
+av_positive_z_nth_tta = [av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
+    hold on
+    plot3(positive_z_nth_x,positive_z_nth_y,positive_z_nth_z,'ys')
+    plot3(av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+% Negative X Nth ROI TTA
+nth_z = range_z/7;
+
+negative_z_nth = z_max - nth_z;
+
+negative_z_nth_ROI = (aligned_nodes(:,3) >= negative_z_nth) & (aligned_nodes(:,1) <= -5);
+
+negative_z_nth_x = nonzeros(aligned_nodes(:,1).*negative_z_nth_ROI);
+negative_z_nth_y = nonzeros(aligned_nodes(:,2).*negative_z_nth_ROI);
+negative_z_nth_z = nonzeros(aligned_nodes(:,3).*negative_z_nth_ROI);
+
+av_negative_z_nth_x = mean(negative_z_nth_x);
+av_negative_z_nth_y = mean(negative_z_nth_y);
+av_negative_z_nth_z = mean(negative_z_nth_z);
+
+av_negative_z_nth_tta = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
+    hold on
+    plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'ys')
+    plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
 end
 
 %% Just for MDTA and TLSA
@@ -555,6 +614,12 @@ if bone_indx == 3
     NGA = av_positive_x_nth_mdta;
 else
     NGA = [0,0,0];
+end
+
+if bone_indx == 1 && bone_coord >= 2
+    TTA = [av_positive_z_nth_tta; av_negative_z_nth_tta];
+else
+    TTA = [0,0,0; 0,0,0];
 end
 
 origin = [0,0,0];
