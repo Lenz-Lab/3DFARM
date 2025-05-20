@@ -35,7 +35,6 @@ else
     selected_sheet = sheets{1};
 end
 
-
 data = readtable(sheet_path, 'ReadVariableNames', false, 'Sheet', selected_sheet);
 temp = strfind(folder_path,'\');
 FolderName = folder_path(temp(end-1)+1:end-1);
@@ -397,5 +396,5 @@ for col = 1:width(data)
     writematrix(A,xlfilename,'Sheet',ind_name);
     writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
     blankCells = repmat("", 37, 2); % here 3 columns; adjust as needed
-    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A17:B50');
+    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A15:B50');
 end

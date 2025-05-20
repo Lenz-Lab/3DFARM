@@ -119,13 +119,18 @@ end
 nodes_template = TR_template.Points;
 con_temp = TR_template.ConnectivityList;
 
-if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
+if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3 || bone_indx == 13) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
     [eigenvectors, ~] = eig(cov(nodes));
 
     [~, idx] = sort(diag(cov(nodes)), 'descend');
     primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
 
-    target_direction = [0; 1; 0];
+    if bone_indx == 13
+        target_direction = [0; 0; -1];
+    else
+        target_direction = [0; 1; 0];
+    end
+
     rotation_axis = cross(primary_axis, target_direction);
     rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
     theta = acos(dot(primary_axis, target_direction)); % Rotation angle
