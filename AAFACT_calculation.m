@@ -1,4 +1,4 @@
-function out = AAFACT_calculation(TR_bone, bone_indx, side_indx)
+function out = AAFACT_calculation(TR_bone, bone_indx, side_indx, talq)
 
 %% Initialize 'out'
 % Define the size mapping for initialization based on bone_indx
@@ -52,7 +52,12 @@ for n = 1:length(bone_coord)
     % medial region is in the positive X direction.
     [nodes,cm_nodes] = center(nodes,1);
     better_start = 1;
-    [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start, 1);
+    
+    if talq == 1
+        [aligned_nodes, RTs] = icp_template_simple(bone_indx, nodes, bone_coord(n), better_start, 1);
+    elseif talq == 0
+        [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start, 1);
+    end
 
     %% Performs coordinate system calculation
     [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY, NGA, TTA] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);

@@ -143,11 +143,55 @@ for col = 1:width(data)
         end
     end
 
+    %% Align Talus
+    if isfield(bonestl, 'Talus')
+        if side_indx == 1
+            nodes = bonestl.Talus.Points .* [1,1,-1];
+        end
+        [nodes,cm_nodes] = center(nodes,1);
+        [~, RTs] = icp_template(1, nodes, 1, 1, 1); % Align to talus TN
+        talq = 1;
+    else
+        cm_nodes = [0,0,0];
+        RTs.Rmetpca = eye(3);
+        RTs.iflip = eye(3);
+        RTs.iR = eye(3);
+        RTs.iT = [0,0,0]';
+        talq = 0;
+    end
+
+    % Get the field names in bonestl (e.g., 'Talus', 'Calcaneus', etc.)
+    boneNames = fieldnames(bonestl);
+
+    % Loop through each bone and apply the rotation
+    for i = 1:length(boneNames)
+        boneName = boneNames{i}; % Get the current bone name
+        temp_nodes = bonestl.(boneName).Points;
+
+        if side_indx == 1
+            temp_nodes = temp_nodes .* [1,1,-1];
+        end
+
+        temp_nodes = temp_nodes - cm_nodes;
+
+        temp_nodes = (RTs.Rmetpca * temp_nodes')';
+
+        temp_nodes = (RTs.iR * ((temp_nodes*RTs.iflip)') + repmat(RTs.iT, 1, length(temp_nodes')))';
+
+        if side_indx == 1
+            temp_nodes = temp_nodes .* [1,1,-1];
+        end
+
+        bonestl.(boneName) = triangulation(bonestl.(boneName).ConnectivityList,temp_nodes);
+
+    end
+
+%% AAFACT Calculations
     for j = 1:length(all_bone_indx)
         if ismember(all_bone_indx(j), [1, 2, 3, 8, 9, 12, 13])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             % Perform the AAFACT calculation
-            out.(AAFACT_bone) = AAFACT_calculation(bonestl.(AAFACT_bone), all_bone_indx(j), side_indx);
+            out.(AAFACT_bone) = AAFACT_calculation(bonestl.(AAFACT_bone), all_bone_indx(j), side_indx, talq);
         else
             AAFACT_bone = list_bone{all_bone_indx(j)};
             % Add filler for unused bones

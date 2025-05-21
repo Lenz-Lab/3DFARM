@@ -1,4 +1,4 @@
-function [aligned_nodes, RTs] = icp_template(bone_indx,nodes,bone_coord,better_start,template_version)
+function [aligned_nodes, RTs] = icp_template_simple(bone_indx,nodes,bone_coord,better_start,template_version)
 % This function aligned the user input bone to a predefined template bone.
 % It requires the bone index bone to identify which bone was chosen
 % (bone_indx), the bone nodal points (nodes), the coordinate system chosen
@@ -70,80 +70,82 @@ if template_version == 1
         a = 3;
     end
 elseif template_version == 2
-    % Read in Template Bone
-    if bone_indx == 1 && bone_coord == 1 % TN
-        TR_template = stlread('Talus_Initial.stl');
-        a = 2;
-    elseif bone_indx == 2 && bone_coord == 1
-        TR_template = stlread('Calcaneus_Initial.stl');
-        a = 2;
-    elseif bone_indx == 3
-        TR_template = stlread('Navicular_Initial.stl');
-        a = 1;
-    elseif bone_indx == 4
-        TR_template = stlread('Cuboid_Initial.stl');
-        a = 2;
-    elseif bone_indx == 5
-        TR_template = stlread('Med_Cuneiform_Initial.stl');
-        a = 3;
-    elseif bone_indx == 6
-        TR_template = stlread('Int_Cuneiform_Initial.stl');
-        a = 3;
-    elseif bone_indx == 7
-        TR_template = stlread('Lat_Cuneiform_Initial.stl');
-        a = 3;
-    elseif bone_indx == 8
-        TR_template = stlread('Metatarsal1_Initial.stl');
-        a = 2;
-    elseif bone_indx == 9
-        TR_template = stlread('Metatarsal2_Initial.stl');
-        a = 2;
-    elseif bone_indx == 10
-        TR_template = stlread('Metatarsal3_Initial.stl');
-        a = 2;
-    elseif bone_indx == 11
-        TR_template = stlread('Metatarsal4_Initial.stl');
-        a = 2;
-    elseif bone_indx == 12
-        TR_template = stlread('Metatarsal5_Initial.stl');
-        a = 2;
-    elseif bone_indx == 13 && bone_coord == 1
-        TR_template = stlread('Tibia_Initial.stl');
-        a = 3;
-    elseif bone_indx == 14 && bone_coord == 1
-        TR_template = stlread('Fibula_Initial.stl');
-        a = 3;
-    end
+    % % Read in Template Bone
+    % if bone_indx == 1 && bone_coord == 1 % TN
+    %     TR_template = stlread('Talus_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 2 && bone_coord == 1
+    %     TR_template = stlread('Calcaneus_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 3
+    %     TR_template = stlread('Navicular_Initial.stl');
+    %     a = 1;
+    % elseif bone_indx == 4
+    %     TR_template = stlread('Cuboid_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 5
+    %     TR_template = stlread('Med_Cuneiform_Initial.stl');
+    %     a = 3;
+    % elseif bone_indx == 6
+    %     TR_template = stlread('Int_Cuneiform_Initial.stl');
+    %     a = 3;
+    % elseif bone_indx == 7
+    %     TR_template = stlread('Lat_Cuneiform_Initial.stl');
+    %     a = 3;
+    % elseif bone_indx == 8
+    %     TR_template = stlread('Metatarsal1_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 9
+    %     TR_template = stlread('Metatarsal2_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 10
+    %     TR_template = stlread('Metatarsal3_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 11
+    %     TR_template = stlread('Metatarsal4_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 12
+    %     TR_template = stlread('Metatarsal5_Initial.stl');
+    %     a = 2;
+    % elseif bone_indx == 13 && bone_coord == 1
+    %     TR_template = stlread('Tibia_Initial.stl');
+    %     a = 3;
+    % elseif bone_indx == 14 && bone_coord == 1
+    %     TR_template = stlread('Fibula_Initial.stl');
+    %     a = 3;
+    % end
 end
 
 nodes_template = TR_template.Points;
 con_temp = TR_template.ConnectivityList;
 
-if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3 || bone_indx == 13) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
-    [eigenvectors, ~] = eig(cov(nodes));
+% if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3 || bone_indx == 13) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
+%     [eigenvectors, ~] = eig(cov(nodes));
+% 
+%     [~, idx] = sort(diag(cov(nodes)), 'descend');
+%     primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
+% 
+%     if bone_indx == 13
+%         target_direction = [0; 0; -1];
+%     else
+%         target_direction = [0; 1; 0];
+%     end
+% 
+%     rotation_axis = cross(primary_axis, target_direction);
+%     rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
+%     theta = acos(dot(primary_axis, target_direction)); % Rotation angle
+% 
+%     K = [0, -rotation_axis(3), rotation_axis(2);
+%         rotation_axis(3), 0, -rotation_axis(1);
+%         -rotation_axis(2), rotation_axis(1), 0]; % Skew-symmetric matrix
+%     Rmetpca = eye(3) + sin(theta) * K + (1 - cos(theta)) * (K * K);
+% 
+%     nodes = (Rmetpca * nodes')'; % Transpose for matrix multiplication
+% else
+%     Rmetpca = [];
+% end
 
-    [~, idx] = sort(diag(cov(nodes)), 'descend');
-    primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
-
-    if bone_indx == 13
-        target_direction = [0; 0; -1];
-    else
-        target_direction = [0; 1; 0];
-    end
-
-    rotation_axis = cross(primary_axis, target_direction);
-    rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
-    theta = acos(dot(primary_axis, target_direction)); % Rotation angle
-
-    K = [0, -rotation_axis(3), rotation_axis(2);
-        rotation_axis(3), 0, -rotation_axis(1);
-        -rotation_axis(2), rotation_axis(1), 0]; % Skew-symmetric matrix
-    Rmetpca = eye(3) + sin(theta) * K + (1 - cos(theta)) * (K * K);
-
-    nodes = (Rmetpca * nodes')'; % Transpose for matrix multiplication
-else
-    Rmetpca = [];
-end
+Rmetpca = eye(3);
 
 max_nodes_x = (max(nodes(:,1)) - min(nodes(:,1)));
 max_nodes_y = (max(nodes(:,2)) - min(nodes(:,2)));
@@ -239,166 +241,188 @@ end
 % the second is just the points.
 
 format long g
-iterations = 200;
+iterations = 10;
 
-% Rotations
-r.r0 = eye(3);
-r.rx = rotx(90);
-r.rxx = rotx(180);
-r.rxxx = rotx(270);
-r.ry = roty(90);
-r.ryy = roty(180);
-r.ryyy = roty(270);
-r.rz = rotz(90);
-r.rzz = rotz(180);
-r.rzzz = rotz(270);
+rot = eye(3); % Access each rotation matrix using the field name
+rotnodes = nodes*rot; % Multiple nodes by rotation matrix
 
-r.rxy = rotx(90) * roty(90);
-r.rxyy = rotx(90) * roty(180);
-r.rxyyy = rotx(90) * roty(270);
+[R_temp,T_temp,E_temp] = icp_constrained(nodes_template',rotnodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp,'MaxRotationDeg',60);
+[Rwr_temp,Twr_temp,Ewr_temp] = icp_constrained(nodes_template',rotnodes', iterations,'Matching','kDtree','WorstRejection',0.1,'MaxRotationDeg',60);
 
-r.rxxy = rotx(180) * roty(90);
-r.rxxyy = rotx(180) * roty(180);
-r.rxxyyy = rotx(180) * roty(270);
-
-r.rxxxy = rotx(270) * roty(90);
-r.rxxxyy = rotx(270) * roty(180);
-r.rxxxyyy = rotx(270) * roty(270);
-
-r.rxz = rotx(90) * rotz(90);
-r.rxzz = rotx(90) * rotz(180);
-r.rxzzz = rotx(90) * rotz(270);
-
-r.rxxz = rotx(180) * rotz(90);
-r.rxxzz = rotx(180) * rotz(180);
-r.rxxzzz = rotx(180) * rotz(270);
-
-r.rxxxz = rotx(270) * rotz(90);
-r.rxxxzz = rotx(270) * rotz(180);
-r.rxxxzzz = rotx(270) * rotz(270);
-
-r.ryx = roty(90) * rotx(90);
-r.ryxx = roty(90) * rotx(180);
-r.ryxxx = roty(90) * rotx(270);
-
-r.ryyx = roty(180) * rotx(90);
-r.ryyxx = roty(180) * rotx(180);
-r.ryyxxx = roty(180) * rotx(270);
-
-r.ryyyx = roty(270) * rotx(90);
-r.ryyyxx = roty(270) * rotx(180);
-r.ryyyxxx = roty(270) * rotx(270);
-
-r.ryz = roty(90) * rotz(90);
-r.ryzz = roty(90) * rotz(180);
-r.ryzzz = roty(90) * rotz(270);
-
-r.ryyz = roty(180) * rotz(90);
-r.ryyzz = roty(180) * rotz(180);
-r.ryyzzz = roty(180) * rotz(270);
-
-r.ryyyz = roty(270) * rotz(90);
-r.ryyyzz = roty(270) * rotz(180);
-r.ryyyzzz = roty(270) * rotz(270);
-
-r.rzx = rotz(90) * rotx(90);
-r.rzxx = rotz(90) * rotx(180);
-r.rzxxx = rotz(90) * rotx(270);
-
-r.rzzx = rotz(180) * rotx(90);
-r.rzzxx = rotz(180) * rotx(180);
-r.rzzxxx = rotz(180) * rotx(270);
-
-r.rzzzx = rotz(270) * rotx(90);
-r.rzzzxx = rotz(270) * rotx(180);
-r.rzzzxxx = rotz(270) * rotx(270);
-
-r.rzy = rotz(90) * roty(90);
-r.rzyy = rotz(90) * roty(180);
-r.rzyyy = rotz(90) * roty(270);
-
-r.rzzy = rotz(180) * roty(90);
-r.rzzyy = rotz(180) * roty(180);
-r.rzzyyy = rotz(180) * roty(270);
-
-r.rzzzy = rotz(270) * roty(90);
-r.rzzzyy = rotz(270) * roty(180);
-r.rzzzyyy = rotz(270) * roty(270);
-
-fields = fieldnames(r);
-
-if better_start == 2
-    field_name = fields{1};
-    [R_temp,T_temp,E_temp] = icp(nodes_template',nodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp);
-    [Rwr_temp,Twr_temp,Ewr_temp] = icp(nodes_template',nodes', iterations,'Matching','kDtree','WorstRejection',0.1);
-    if E_temp(end) < Ewr_temp(end)
-        R.(field_name) = R_temp;
-        T.(field_name) = T_temp;
-        E.(field_name) = E_temp(end);
-    else
-        R.(field_name) = Rwr_temp;
-        T.(field_name) = Twr_temp;
-        E.(field_name) = Ewr_temp(end);
-    end
+if E_temp(end) < Ewr_temp(end)
+    R = R_temp;
+    T = T_temp;
+else
+    R = Rwr_temp;
+    T = Twr_temp;
 end
-
-if better_start == 1
-    iterations_temp = 3;
-    for n = 1:numel(fields)
-        rot = r.(fields{n}); % Access each rotation matrix using the field name
-        rotnodes = nodes*rot; % Multiple nodes by rotation matrix
-        [~,~,error_temp] = icp(nodes_template',rotnodes', iterations_temp,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp); % Perform small ICP
-        E_short.(fields{n}) = error_temp(end); % Save the lowest error
-    end
-
-    % Convert the structure 'E' to a cell array for easier sorting
-    E_short_fields = fieldnames(E_short);
-    E_short_values = struct2array(E_short);
-
-    % Find the indices of the 5 smallest error values
-    [~, idx_smallest] = mink(E_short_values, 5);
-
-    % Get the 5 corresponding field names (rotation matrices)
-    smallest_fields = E_short_fields(idx_smallest);
-
-    % Rerun the loop with 200 iterations on the 5 smallest error rotations
-
-    for i = 1:numel(smallest_fields)
-        field_name = smallest_fields{i};  % Get the field name of the current rotation
-        rot = r.(field_name);  % Access the corresponding rotation matrix
-        rotnodes = nodes * rot;  % Multiply nodes by the rotation matrix
-        [R_temp,T_temp,E_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp);
-        [Rwr_temp,Twr_temp,Ewr_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','WorstRejection',0.1);
-        if E_temp(end) < Ewr_temp(end)
-            R.(field_name) = R_temp;
-            T.(field_name) = T_temp;
-            E.(field_name) = E_temp(end);
-        else
-            R.(field_name) = Rwr_temp;
-            T.(field_name) = Twr_temp;
-            E.(field_name) = Ewr_temp(end);
-        end
-    end
-end
-
-% Find the smallest error value and corresponding field name
-E_values = struct2array(E);  % Convert the structure 'E' to a regular array of error values
-E_fields = fieldnames(E);    % Get the list of field names from 'E'
-[~, idx_smallest] = min(E_values);  % Find the index of the smallest error value
-smallest_field = E_fields{idx_smallest};  % Get the corresponding field name
-
-% Retrieve the corresponding R, T, and rotation matrix
-best_R = R.(smallest_field);  % The best R matrix
-best_T = T.(smallest_field);  % The best T vector
-best_rotation_matrix = r.(smallest_field);  % The rotation matrix from the original structure
 
 % Perform the final alignment calculation
-aligned_nodes = (best_R * ((nodes*best_rotation_matrix)') + repmat(best_T, 1, length(nodes')))';  % Align the nodes
+aligned_nodes = (R * ((rotnodes*rot)') + repmat(T, 1, length(rotnodes')))';  % Align the nodes
 
 % Store the results for the final transformation
-iflip = best_rotation_matrix;  % The rotation matrix used for alignment
-iR = best_R;  % The best R matrix
-iT = best_T;  % The best T vector
+iflip = eye(3);  % The rotation matrix used for alignment
+iR = R;  % The best R matrix
+iT = T;  % The best T vector
+
+% Rotations
+% r.r0 = eye(3);
+% r.rx = rotx(90);
+% r.rxx = rotx(180);
+% r.rxxx = rotx(270);
+% r.ry = roty(90);
+% r.ryy = roty(180);
+% r.ryyy = roty(270);
+% r.rz = rotz(90);
+% r.rzz = rotz(180);
+% r.rzzz = rotz(270);
+% 
+% r.rxy = rotx(90) * roty(90);
+% r.rxyy = rotx(90) * roty(180);
+% r.rxyyy = rotx(90) * roty(270);
+% 
+% r.rxxy = rotx(180) * roty(90);
+% r.rxxyy = rotx(180) * roty(180);
+% r.rxxyyy = rotx(180) * roty(270);
+% 
+% r.rxxxy = rotx(270) * roty(90);
+% r.rxxxyy = rotx(270) * roty(180);
+% r.rxxxyyy = rotx(270) * roty(270);
+% 
+% r.rxz = rotx(90) * rotz(90);
+% r.rxzz = rotx(90) * rotz(180);
+% r.rxzzz = rotx(90) * rotz(270);
+% 
+% r.rxxz = rotx(180) * rotz(90);
+% r.rxxzz = rotx(180) * rotz(180);
+% r.rxxzzz = rotx(180) * rotz(270);
+% 
+% r.rxxxz = rotx(270) * rotz(90);
+% r.rxxxzz = rotx(270) * rotz(180);
+% r.rxxxzzz = rotx(270) * rotz(270);
+% 
+% r.ryx = roty(90) * rotx(90);
+% r.ryxx = roty(90) * rotx(180);
+% r.ryxxx = roty(90) * rotx(270);
+% 
+% r.ryyx = roty(180) * rotx(90);
+% r.ryyxx = roty(180) * rotx(180);
+% r.ryyxxx = roty(180) * rotx(270);
+% 
+% r.ryyyx = roty(270) * rotx(90);
+% r.ryyyxx = roty(270) * rotx(180);
+% r.ryyyxxx = roty(270) * rotx(270);
+% 
+% r.ryz = roty(90) * rotz(90);
+% r.ryzz = roty(90) * rotz(180);
+% r.ryzzz = roty(90) * rotz(270);
+% 
+% r.ryyz = roty(180) * rotz(90);
+% r.ryyzz = roty(180) * rotz(180);
+% r.ryyzzz = roty(180) * rotz(270);
+% 
+% r.ryyyz = roty(270) * rotz(90);
+% r.ryyyzz = roty(270) * rotz(180);
+% r.ryyyzzz = roty(270) * rotz(270);
+% 
+% r.rzx = rotz(90) * rotx(90);
+% r.rzxx = rotz(90) * rotx(180);
+% r.rzxxx = rotz(90) * rotx(270);
+% 
+% r.rzzx = rotz(180) * rotx(90);
+% r.rzzxx = rotz(180) * rotx(180);
+% r.rzzxxx = rotz(180) * rotx(270);
+% 
+% r.rzzzx = rotz(270) * rotx(90);
+% r.rzzzxx = rotz(270) * rotx(180);
+% r.rzzzxxx = rotz(270) * rotx(270);
+% 
+% r.rzy = rotz(90) * roty(90);
+% r.rzyy = rotz(90) * roty(180);
+% r.rzyyy = rotz(90) * roty(270);
+% 
+% r.rzzy = rotz(180) * roty(90);
+% r.rzzyy = rotz(180) * roty(180);
+% r.rzzyyy = rotz(180) * roty(270);
+% 
+% r.rzzzy = rotz(270) * roty(90);
+% r.rzzzyy = rotz(270) * roty(180);
+% r.rzzzyyy = rotz(270) * roty(270);
+
+% fields = fieldnames(r);
+
+% if better_start == 2
+%     field_name = fields{1};
+%     [R_temp,T_temp,E_temp] = icp(nodes_template',nodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp);
+%     [Rwr_temp,Twr_temp,Ewr_temp] = icp(nodes_template',nodes', iterations,'Matching','kDtree','WorstRejection',0.1);
+%     if E_temp(end) < Ewr_temp(end)
+%         R.(field_name) = R_temp;
+%         T.(field_name) = T_temp;
+%         E.(field_name) = E_temp(end);
+%     else
+%         R.(field_name) = Rwr_temp;
+%         T.(field_name) = Twr_temp;
+%         E.(field_name) = Ewr_temp(end);
+%     end
+% end
+
+% if better_start == 1
+%     iterations_temp = 3;
+%     for n = 1:numel(fields)
+%         rot = r.(fields{n}); % Access each rotation matrix using the field name
+%         rotnodes = nodes*rot; % Multiple nodes by rotation matrix
+%         [~,~,error_temp] = icp(nodes_template',rotnodes', iterations_temp,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp); % Perform small ICP
+%         E_short.(fields{n}) = error_temp(end); % Save the lowest error
+%     end
+% 
+%     % Convert the structure 'E' to a cell array for easier sorting
+%     E_short_fields = fieldnames(E_short);
+%     E_short_values = struct2array(E_short);
+% 
+%     % Find the indices of the 5 smallest error values
+%     [~, idx_smallest] = mink(E_short_values, 5);
+% 
+%     % Get the 5 corresponding field names (rotation matrices)
+%     smallest_fields = E_short_fields(idx_smallest);
+% 
+%     % Rerun the loop with 200 iterations on the 5 smallest error rotations
+% 
+%     for i = 1:numel(smallest_fields)
+%         field_name = smallest_fields{i};  % Get the field name of the current rotation
+%         rot = r.(field_name);  % Access the corresponding rotation matrix
+%         rotnodes = nodes * rot;  % Multiply nodes by the rotation matrix
+%         [R_temp,T_temp,E_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp);
+%         [Rwr_temp,Twr_temp,Ewr_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','WorstRejection',0.1);
+%         if E_temp(end) < Ewr_temp(end)
+%             R.(field_name) = R_temp;
+%             T.(field_name) = T_temp;
+%             E.(field_name) = E_temp(end);
+%         else
+%             R.(field_name) = Rwr_temp;
+%             T.(field_name) = Twr_temp;
+%             E.(field_name) = Ewr_temp(end);
+%         end
+%     end
+% end
+
+% % Find the smallest error value and corresponding field name
+% E_values = struct2array(E);  % Convert the structure 'E' to a regular array of error values
+% E_fields = fieldnames(E);    % Get the list of field names from 'E'
+% [~, idx_smallest] = min(E_values);  % Find the index of the smallest error value
+% smallest_field = E_fields{idx_smallest};  % Get the corresponding field name
+% 
+% % Retrieve the corresponding R, T, and rotation matrix
+% best_R = R.(smallest_field);  % The best R matrix
+% best_T = T.(smallest_field);  % The best T vector
+% best_rotation_matrix = r.(smallest_field);  % The rotation matrix from the original structure
+% 
+% % Perform the final alignment calculation
+% aligned_nodes = (best_R * ((nodes*best_rotation_matrix)') + repmat(best_T, 1, length(nodes')))';  % Align the nodes
+% 
+% % Store the results for the final transformation
+% iflip = best_rotation_matrix;  % The rotation matrix used for alignment
+% iR = best_R;  % The best R matrix
+% iT = best_T;  % The best T vector
 
 %% Additional alignments and adjustments
 % This loop performs an alignment for the TT CS of the talus
