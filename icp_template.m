@@ -119,31 +119,31 @@ end
 nodes_template = TR_template.Points;
 con_temp = TR_template.ConnectivityList;
 
-if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3 || bone_indx == 13) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
-    [eigenvectors, ~] = eig(cov(nodes));
-
-    [~, idx] = sort(diag(cov(nodes)), 'descend');
-    primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
-
-    if bone_indx == 13
-        target_direction = [0; 0; -1];
-    else
-        target_direction = [0; 1; 0];
-    end
-
-    rotation_axis = cross(primary_axis, target_direction);
-    rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
-    theta = acos(dot(primary_axis, target_direction)); % Rotation angle
-
-    K = [0, -rotation_axis(3), rotation_axis(2);
-        rotation_axis(3), 0, -rotation_axis(1);
-        -rotation_axis(2), rotation_axis(1), 0]; % Skew-symmetric matrix
-    Rmetpca = eye(3) + sin(theta) * K + (1 - cos(theta)) * (K * K);
-
-    nodes = (Rmetpca * nodes')'; % Transpose for matrix multiplication
-else
+% if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3 || bone_indx == 13) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
+%     [eigenvectors, ~] = eig(cov(nodes));
+% 
+%     [~, idx] = sort(diag(cov(nodes)), 'descend');
+%     primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
+% 
+%     if bone_indx == 13
+%         target_direction = [0; 0; -1];
+%     else
+%         target_direction = [0; 1; 0];
+%     end
+% 
+%     rotation_axis = cross(primary_axis, target_direction);
+%     rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
+%     theta = acos(dot(primary_axis, target_direction)); % Rotation angle
+% 
+%     K = [0, -rotation_axis(3), rotation_axis(2);
+%         rotation_axis(3), 0, -rotation_axis(1);
+%         -rotation_axis(2), rotation_axis(1), 0]; % Skew-symmetric matrix
+    % Rmetpca = eye(3) + sin(theta) * K + (1 - cos(theta)) * (K * K);
+    % 
+    % nodes = (Rmetpca * nodes')'; % Transpose for matrix multiplication
+% else
     Rmetpca = [];
-end
+% end
 
 max_nodes_x = (max(nodes(:,1)) - min(nodes(:,1)));
 max_nodes_y = (max(nodes(:,2)) - min(nodes(:,2)));

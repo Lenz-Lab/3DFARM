@@ -50,12 +50,20 @@ elseif bone_indx == 13 || bone_indx == 14 % Tibia or Fibula
 end
 
 %% Just for TTA
-% Positive X Nth ROI TTA
+% Positive Z Nth ROI TTA
 nth_z = range_z/7;
 
 positive_z_nth = z_max - nth_z;
 
 positive_z_nth_ROI = (aligned_nodes(:,3) >= positive_z_nth) & (aligned_nodes(:,1) >= 5);
+
+if bone_indx == 1 && bone_coord >= 2
+    while isempty(nonzeros(positive_z_nth_ROI)) % This accounts for if the postivie Z nth roi is not on the bone
+        iterator = 1;
+        positive_z_nth_ROI = (aligned_nodes(:,3) >= positive_z_nth-iterator) & (aligned_nodes(:,1) >= 5);
+        disp('looping')
+    end
+end
 
 positive_z_nth_x = nonzeros(aligned_nodes(:,1).*positive_z_nth_ROI);
 positive_z_nth_y = nonzeros(aligned_nodes(:,2).*positive_z_nth_ROI);

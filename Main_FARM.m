@@ -52,7 +52,10 @@ list_bone2 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_
 list_bone3 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
     'Lateral_Cuneiform','Metatarsal_1','Metatarsal_2','Metatarsal_3','Metatarsal_4','Metatarsal_5',...
     'Tibia','Fibula'};
-list_side_folder = {'Right','_R.','_R_','Left','_L.','_L_'};
+list_bone4 = {'Talus', 'Calc', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
+    'Lat_Cuneiform','1st_Met','2nd_Met','3rd_Met','4th_Met','5th_Met',...
+    'Tibia','Fibula'};
+list_side_folder = {'Right','_R.','_R_','_R ','_R\','Left','_L.','_L_','_L ','_L\'};
 list_side = {'Right','Left'};
 
 %% Iterate through each person (column)
@@ -75,7 +78,7 @@ for col = 1:width(data)
         % Looks through the file name for the bone name
         if ~exist('bone_indx', 'var')
             for n = 1:length(list_bone)
-                if contains(lower(FileName), lower(list_bone{n})) || contains(lower(FileName), lower(list_bone2{n})) || contains(lower(FileName), lower(list_bone3{n}))
+                if contains(lower(FileName), lower(list_bone{n})) || contains(lower(FileName), lower(list_bone2{n})) || contains(lower(FileName), lower(list_bone3{n})) || contains(lower(FileName), lower(list_bone4{n}))
                     bone_indx = n;
                     break;
                 end
@@ -98,9 +101,9 @@ for col = 1:width(data)
         end
 
         % If the folder and the file don't have the bone side, the user must select
-        if exist('side_folder_indx', 'var') && side_folder_indx <= 3
+        if exist('side_folder_indx', 'var') && side_folder_indx <= 5
             side_indx = 1;
-        elseif exist('side_folder_indx', 'var') && side_folder_indx >= 4
+        elseif exist('side_folder_indx', 'var') && side_folder_indx >= 6
             side_indx = 2;
         else
             [side_indx, ~] = listdlg('PromptString', [{strcat('Select which side this file is:', " ", string(FileName))} {''}], 'ListString', list_side, 'SelectionMode', 'single');
