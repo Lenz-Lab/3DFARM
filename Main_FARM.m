@@ -224,8 +224,14 @@ for col = 1:width(data)
     XZ_viewer = [av_origin, av_X, av_origin, av_Z];
     XY_viewer = [av_origin, av_X, av_origin, av_Y];
 
-    if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Talocalcaneal Angle
-        angles.TCA = angle_calculator(out_rotated.Talus(7,:), out_rotated.Talus(8,:), out_rotated.Calcaneus(7,:), out_rotated.Calcaneus(8,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
+    if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Sagittal Talocalcaneal Angle
+        angles.STCA = angle_calculator(out_rotated.Talus(19,:), out_rotated.Talus(20,:), out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
+    else
+        angles.TCA = NaN;
+    end
+
+    if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Axial Talocalcaneal Angle
+        angles.ATCA = angle_calculator(out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), out_rotated.Talus(19,:), out_rotated.Talus(20,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer);
     else
         angles.TCA = NaN;
     end
@@ -366,7 +372,8 @@ for col = 1:width(data)
 
     %% Save Angles
     A = [
-        "Talocalcaneal Angle",
+        "Sagittal Talocalcaneal Angle",
+        "Axial Talocalcaneal Angle",
         "Calcaneal Inclination Angle",
         "Talar Tilt Angle",
         "Hindfoot Alignment Angle",
