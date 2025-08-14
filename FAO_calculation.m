@@ -1,4 +1,4 @@
-function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, bone4, plane, talus_point, z_min_coords, viewer)
+function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, bone4, plane, talus_point, z_min_coords, viewer, side_indx)
 % FAO_calculation computes the foot and ankle offset based on given geometries.
 % Inputs:
 % - startA, endA: Vectors defining the first reference direction.
@@ -125,4 +125,9 @@ foot_distance = sqrt((endC(1) - startA(1))^2 + (endC(2) - startA(2))^2 + (endC(3
 
 % Compute FAO
 FAO = (talus_distance / foot_distance)*100;
+
+% Account for side
+if side_indx == 1
+    FAO = -FAO;
+end
 end

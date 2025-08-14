@@ -227,13 +227,13 @@ for col = 1:width(data)
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Sagittal Talocalcaneal Angle
         angles.STCA = angle_calculator(out_rotated.Talus(19,:), out_rotated.Talus(20,:), out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
     else
-        angles.TCA = NaN;
+        angles.STCA = NaN;
     end
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Axial Talocalcaneal Angle
         angles.ATCA = angle_calculator(out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), out_rotated.Talus(19,:), out_rotated.Talus(20,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer);
     else
-        angles.TCA = NaN;
+        angles.ATCA = NaN;
     end
 
     if ismember(2,all_bone_indx) % Calcaneal Inclincation Angle
@@ -313,7 +313,7 @@ for col = 1:width(data)
     
     if ismember(2,all_bone_indx) && ismember(8,all_bone_indx) && ismember(12,all_bone_indx) % FAO
         z_min_coords = [out_rotated.Calcaneus(16,:); out_rotated.Metatarsal1(7,:); out_rotated.Metatarsal5(7,:)]; % columns correspond to x y z values of most inferior points
-        angles.FAO = FAO_calculation(out_rotated.Calcaneus(16,:), out_rotated.Metatarsal1(7,:), out_rotated.Calcaneus(16,:), out_rotated.Metatarsal5(7,:), bonestl_transformed.Calcaneus, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal5, bonestl_transformed.Talus, "xy", out_rotated.Talus(21,:), z_min_coords, XY_viewer);
+        angles.FAO = FAO_calculation(out_rotated.Calcaneus(16,:), out_rotated.Metatarsal1(7,:), out_rotated.Calcaneus(16,:), out_rotated.Metatarsal5(7,:), bonestl_transformed.Calcaneus, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal5, bonestl_transformed.Talus, "xy", out_rotated.Talus(21,:), z_min_coords, XY_viewer, side_indx);
     else
         angles.FAO = NaN;
     end
@@ -406,5 +406,5 @@ for col = 1:width(data)
     writematrix(A,xlfilename,'Sheet',ind_name);
     writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
     blankCells = repmat("", 37, 2); % here 3 columns; adjust as needed
-    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A15:B50');
+    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A16:B50');
 end
