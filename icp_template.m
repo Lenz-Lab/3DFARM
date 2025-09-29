@@ -1,4 +1,4 @@
-function [aligned_nodes, RTs] = icp_template(bone_indx,nodes,bone_coord,better_start,template_version)
+function [aligned_nodes, RTs] = icp_template(bone_indx,nodes,bone_coord,better_start)
 % This function aligned the user input bone to a predefined template bone.
 % It requires the bone index bone to identify which bone was chosen
 % (bone_indx), the bone nodal points (nodes), the coordinate system chosen
@@ -7,113 +7,65 @@ function [aligned_nodes, RTs] = icp_template(bone_indx,nodes,bone_coord,better_s
 % position.
 
 addpath('Template_Bones\')
-addpath('Template_Bones\All_Template\')
-if template_version == 1
-    % Read in Template Bone
-    if bone_indx == 1 && bone_coord == 1 % TN
-        TR_template = stlread('Talus_Template.stl');
-        a = 2;
-    elseif bone_indx == 1 && bone_coord >= 2 % TT & ST
-        TR_template2 = stlread('Talus_Template2.stl');
-        TR_template = stlread('Talus_Template.stl');
-        nodes_template2 = TR_template2.Points;
-        a = 2;
-    elseif bone_indx == 2 && bone_coord == 1
-        TR_template = stlread('Calcaneus_Template.stl');
-        a = 2;
-    elseif bone_indx == 2 && bone_coord == 2
-        TR_template = stlread('Calcaneus_Template.stl');
-        TR_template2 = stlread('Calcaneus_Template2.stl');
-        nodes_template2 = TR_template2.Points;
-        a = 2;
-    elseif bone_indx == 3
-        TR_template = stlread('Navicular_Template.stl');
-        a = 1;
-    elseif bone_indx == 4
-        TR_template = stlread('Cuboid_Template.stl');
-        a = 2;
-    elseif bone_indx == 5
-        TR_template = stlread('Medial_Cuneiform_Template.stl');
-        a = 3;
-    elseif bone_indx == 6
-        TR_template = stlread('Intermediate_Cuneiform_Template.stl');
-        a = 3;
-    elseif bone_indx == 7
-        TR_template = stlread('Lateral_Cuneiform_Template.stl');
-        a = 3;
-    elseif bone_indx == 8
-        TR_template = stlread('Metatarsal1_Template.stl');
-        a = 2;
-    elseif bone_indx == 9
-        TR_template = stlread('Metatarsal2_Template.stl');
-        a = 2;
-    elseif bone_indx == 10
-        TR_template = stlread('Metatarsal3_Template.stl');
-        a = 2;
-    elseif bone_indx == 11
-        TR_template = stlread('Metatarsal4_Template.stl');
-        a = 2;
-    elseif bone_indx == 12
-        TR_template = stlread('Metatarsal5_Template.stl');
-        a = 2;
-    elseif bone_indx == 13 && bone_coord == 1
-        TR_template = stlread('Tibia_Template.stl');
-        a = 3;
-    elseif bone_indx == 13 && bone_coord == 2
-        TR_template = stlread('Tibia_Template_Facet.stl');
-        a = 3;
-    elseif bone_indx == 14 && bone_coord == 1
-        TR_template = stlread('Fibula_Template.stl');
-        a = 3;
-    elseif bone_indx == 14 && bone_coord == 2
-        TR_template = stlread('Fibula_Template_Facet.stl');
-        a = 3;
-    end
-elseif template_version == 2
-    % Read in Template Bone
-    if bone_indx == 1 && bone_coord == 1 % TN
-        TR_template = stlread('Talus_Initial.stl');
-        a = 2;
-    elseif bone_indx == 2 && bone_coord == 1
-        TR_template = stlread('Calcaneus_Initial.stl');
-        a = 2;
-    elseif bone_indx == 3
-        TR_template = stlread('Navicular_Initial.stl');
-        a = 1;
-    elseif bone_indx == 4
-        TR_template = stlread('Cuboid_Initial.stl');
-        a = 2;
-    elseif bone_indx == 5
-        TR_template = stlread('Med_Cuneiform_Initial.stl');
-        a = 3;
-    elseif bone_indx == 6
-        TR_template = stlread('Int_Cuneiform_Initial.stl');
-        a = 3;
-    elseif bone_indx == 7
-        TR_template = stlread('Lat_Cuneiform_Initial.stl');
-        a = 3;
-    elseif bone_indx == 8
-        TR_template = stlread('Metatarsal1_Initial.stl');
-        a = 2;
-    elseif bone_indx == 9
-        TR_template = stlread('Metatarsal2_Initial.stl');
-        a = 2;
-    elseif bone_indx == 10
-        TR_template = stlread('Metatarsal3_Initial.stl');
-        a = 2;
-    elseif bone_indx == 11
-        TR_template = stlread('Metatarsal4_Initial.stl');
-        a = 2;
-    elseif bone_indx == 12
-        TR_template = stlread('Metatarsal5_Initial.stl');
-        a = 2;
-    elseif bone_indx == 13 && bone_coord == 1
-        TR_template = stlread('Tibia_Initial.stl');
-        a = 3;
-    elseif bone_indx == 14 && bone_coord == 1
-        TR_template = stlread('Fibula_Initial.stl');
-        a = 3;
-    end
+% Read in Template Bone
+if bone_indx == 1 && bone_coord == 1 % TN
+    TR_template = stlread('Talus_Template.stl');
+    a = 2;
+elseif bone_indx == 1 && bone_coord >= 2 % TT & ST
+    TR_template2 = stlread('Talus_Template2.stl');
+    TR_template = stlread('Talus_Template.stl');
+    nodes_template2 = TR_template2.Points;
+    a = 2;
+elseif bone_indx == 2 && bone_coord == 1
+    TR_template = stlread('Calcaneus_Template.stl');
+    a = 2;
+elseif bone_indx == 2 && bone_coord == 2
+    TR_template = stlread('Calcaneus_Template.stl');
+    TR_template2 = stlread('Calcaneus_Template2.stl');
+    nodes_template2 = TR_template2.Points;
+    a = 2;
+elseif bone_indx == 3
+    TR_template = stlread('Navicular_Template.stl');
+    a = 1;
+elseif bone_indx == 4
+    TR_template = stlread('Cuboid_Template.stl');
+    a = 2;
+elseif bone_indx == 5
+    TR_template = stlread('Medial_Cuneiform_Template.stl');
+    a = 3;
+elseif bone_indx == 6
+    TR_template = stlread('Intermediate_Cuneiform_Template.stl');
+    a = 3;
+elseif bone_indx == 7
+    TR_template = stlread('Lateral_Cuneiform_Template.stl');
+    a = 3;
+elseif bone_indx == 8
+    TR_template = stlread('Metatarsal1_Template.stl');
+    a = 2;
+elseif bone_indx == 9
+    TR_template = stlread('Metatarsal2_Template.stl');
+    a = 2;
+elseif bone_indx == 10
+    TR_template = stlread('Metatarsal3_Template.stl');
+    a = 2;
+elseif bone_indx == 11
+    TR_template = stlread('Metatarsal4_Template.stl');
+    a = 2;
+elseif bone_indx == 12
+    TR_template = stlread('Metatarsal5_Template.stl');
+    a = 2;
+elseif bone_indx == 13 && bone_coord == 1
+    TR_template = stlread('Tibia_Template.stl');
+    a = 3;
+elseif bone_indx == 13 && bone_coord == 2
+    TR_template = stlread('Tibia_Template_Facet.stl');
+    a = 3;
+elseif bone_indx == 14 && bone_coord == 1
+    TR_template = stlread('Fibula_Template.stl');
+    a = 3;
+elseif bone_indx == 14 && bone_coord == 2
+    TR_template = stlread('Fibula_Template_Facet.stl');
+    a = 3;
 end
 
 nodes_template = TR_template.Points;
@@ -198,7 +150,7 @@ else
     tibfib_switch = 1; % over 1/5 tibia/fibula is available
 end
 
-% Similar process as above for cropped metatarsals
+% % Similar process as above for cropped metatarsals
 % if bone_indx >= 8 && bone_indx <= 12
 %     nodes_template_length = (max(nodes_template(:,a)) - min(nodes_template(:,a)));
 %     if nodes_template_length/1.25 > max_nodes_length
@@ -409,15 +361,7 @@ else
     sR_talus = [];
 end
 
-% This loop performs an alignment for the ST CS of the calcaneus
-if bone_indx == 2 && bone_coord == 2
-    [sR_calcaneus] = [0.860959988377867	-0.205927537491042	-0.465125518236977
-        0.508647238197964	0.357673459109972	0.783165170140921
-        0.00508777809228038	-0.910858686049157	0.412687010412114];
-    aligned_nodes = (sR_calcaneus*(aligned_nodes'))';
-else
-    sR_calcaneus = [];
-end
+sR_calcaneus = [];
 
 % This undoes the enlargening of the users model
 if multiplier > 1
@@ -514,7 +458,6 @@ else
     cm_meta = [];
 end
 
-
 %% Combine all rotation and translation matricies
 RTs.iflip = iflip; % initial flip flip_out
 RTs.sflip = sflip; % secondary flip (for tibia) tib_flip
@@ -532,17 +475,17 @@ RTs.red = [];
 RTs.yellow = [];
 
 %% Visualize proper alignment
-figure()
-if bone_indx == 1 && bone_coord >= 2
-    plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
-elseif  bone_indx == 2 && bone_coord == 2
-    plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
-else
-    plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
-end
-hold on
-plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'.b')
-xlabel('X')
-ylabel('Y')
-zlabel('Z')
-axis equal
+% figure()
+% if bone_indx == 1 && bone_coord >= 2
+%     plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
+% elseif  bone_indx == 2 && bone_coord == 2
+%     plot3(nodes_template2(:,1),nodes_template2(:,2),nodes_template2(:,3),'.k')
+% else
+%     plot3(nodes_template(:,1),nodes_template(:,2),nodes_template(:,3),'.k')
+% end
+% hold on
+% plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'.b')
+% xlabel('X')
+% ylabel('Y')
+% zlabel('Z')
+% axis equal
