@@ -149,8 +149,10 @@ for col = 1:width(data)
     for j = 1:length(all_bone_indx)
         if ismember(all_bone_indx(j), [1, 2, 3, 8, 9, 12, 13])
             AAFACT_bone = list_bone{all_bone_indx(j)};
+            TR_bone = bonestl.(AAFACT_bone);
+            bone_indx = all_bone_indx(j);
             % Perform the AAFACT calculation
-            out.(AAFACT_bone) = AAFACT_calculation(bonestl.(AAFACT_bone), all_bone_indx(j), side_indx);
+            out.(AAFACT_bone) = AAFACT_calculation(TR_bone, bone_indx, side_indx);
         else
             AAFACT_bone = list_bone{all_bone_indx(j)};
             % Add filler for unused bones
@@ -159,59 +161,36 @@ for col = 1:width(data)
     end
 
     %% Transform View
+    boneNames = fieldnames(bonestl);
+
+    % For Hindfoot/Forefoot Measurements
     if isfield(out, 'Calcaneus') && isfield(out, 'Metatarsal1') && isfield(out, 'Talus')
         coordSys1 = [out.Calcaneus(1,:); out.Calcaneus(2,:); out.Calcaneus(4,:); out.Calcaneus(6,:)];
         coordSys2 = [out.Talus(1,:); out.Talus(2,:); out.Talus(4,:); out.Talus(6,:)];
         coordSys3 = [out.Metatarsal1(1,:); out.Metatarsal1(2,:); out.Metatarsal1(4,:); out.Metatarsal1(6,:)];
 
         T_transform = averageCoordinateSystems(coordSys1, coordSys2, coordSys3, side_indx);
-    else
+
+        [out_rotated, bonestl_transformed, ~, ~] = ...
+            transform_bones(T_transform, boneNames, bonestl, out);
+    end
+
+    % For Ankle Measurements
+    if isfield(out, 'Tibia')
+        coordSysT = [out.Tibia(1,:); out.Tibia(2,:); out.Tibia(4,:); out.Tibia(6,:)];
+        T_transform = averageCoordinateSystems(coordSysT, coordSysT, coordSysT, side_indx);
+
+        [out_tibiarotated, bonestl_tibiatransformed, bonestl_saltztransformed, out_saltzrotated] = ...
+            transform_bones(T_transform, boneNames, bonestl, out);
+    end
+
+    % For Misc Measurements (Not recommended)
+    if isfield(out, 'Talus') && (~isfield(out, 'Calcaneus') || ~isfield(out, 'Metatarsal1'))
         coordSysT = [out.Talus(1,:); out.Talus(2,:); out.Talus(4,:); out.Talus(6,:)];
         T_transform = averageCoordinateSystems(coordSysT, coordSysT, coordSysT, side_indx);
-    end
 
-    % Create a new structure for transformed bones
-    bonestl_transformed = struct();
-
-    % Get the field names in bonestl (e.g., 'Talus', 'Calcaneus', etc.)
-    boneNames = fieldnames(bonestl);
-
-    % Loop through each bone and apply the rotation
-    for i = 1:length(boneNames)
-        boneName = boneNames{i}; % Get the current bone name
-
-        % Convert to homogenous coordinates (nx4)
-        n = size(bonestl.(boneName).Points, 1);
-        homogeneous_points = [bonestl.(boneName).Points, ones(n, 1)];
-
-        % Transform vertices and create new triangulation
-        transformed_homogeneous = (T_transform * homogeneous_points')';
-        transformed_points = transformed_homogeneous(:, 1:3);
-        bonestl_transformed.(boneName) = triangulation(bonestl.(boneName).ConnectivityList, transformed_points);
-
-        n = size(out.(boneName), 1);
-        homogeneous_out = [out.(boneName), ones(n, 1)];
-        transformed_homogeneous_out = (T_transform * homogeneous_out')';
-        out_rotated.(boneName) = transformed_homogeneous_out(:, 1:3);
-    end
-
-    % Perform for Saltzman View
-    for i = 1:length(boneNames)
-        boneName = boneNames{i};
-        if boneName == "Talus" || boneName == "Calcaneus" || boneName == "Tibia"
-            homogeneous_points = [bonestl_transformed.(boneName).Points];
-
-            Saltz_transform = rotx(20);
-
-            % Transform vertices and create new triangulation
-            transformed_saltzhomogeneous = (Saltz_transform * homogeneous_points')';
-            transformed_saltzpoints = transformed_saltzhomogeneous(:, :);
-            bonestl_saltztransformed.(boneName) = triangulation(bonestl.(boneName).ConnectivityList, transformed_saltzpoints);
-
-            homogeneous_saltzout = [out_rotated.(boneName)];
-            transformed_homogeneous_saltzout = (Saltz_transform * homogeneous_saltzout')';
-            out_saltzrotated.(boneName) = transformed_homogeneous_saltzout(:, :);
-        end
+        [out_rotated, bonestl_transformed, ~, ~] = ...
+            transform_bones(T_transform, boneNames, bonestl, out);
     end
 
     %% Angle Calculations
@@ -225,13 +204,13 @@ for col = 1:width(data)
     XY_viewer = [av_origin, av_X, av_origin, av_Y];
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Sagittal Talocalcaneal Angle
-        angles.STCA = angle_calculator(out_rotated.Talus(19,:), out_rotated.Talus(20,:), out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
+        angles.STCA = angle_calculator(out_rotated.Talus(13,:), out_rotated.Talus(14,:), out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
     else
         angles.STCA = NaN;
     end
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Axial Talocalcaneal Angle
-        angles.ATCA = angle_calculator(out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), out_rotated.Talus(19,:), out_rotated.Talus(20,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer);
+        angles.ATCA = angle_calculator(out_rotated.Talus(13,:), out_rotated.Talus(14,:),out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.Talus, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer);
     else
         angles.ATCA = NaN;
     end
@@ -255,65 +234,71 @@ for col = 1:width(data)
 
     if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Talar Tilt Angle
         if side_indx == 1
-            angles.TTA = angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(6,:), out_rotated.Talus(22,:), out_rotated.Talus(23,:), bonestl_transformed.Tibia, bonestl_transformed.Talus, "xz", side_indx, XZ_viewer);
+            angles.TTA = angle_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(6,:), out_tibiarotated.Talus(16,:), out_tibiarotated.Talus(17,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Talus, "xz", side_indx, XZ_viewer);
         else
-            angles.TTA = angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(6,:), out_rotated.Talus(23,:), out_rotated.Talus(22,:), bonestl_transformed.Tibia, bonestl_transformed.Talus, "xz", side_indx, XZ_viewer);
+            angles.TTA = angle_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(6,:), out_tibiarotated.Talus(17,:), out_tibiarotated.Talus(16,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Talus, "xz", side_indx, XZ_viewer);
         end
     else
         angles.TTA = NaN;
     end
 
-    if ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % Hindfoot Alignment Angle
-        angles.HAA = angle_calculator(out_saltzrotated.Tibia(1,:), out_saltzrotated.Tibia(4,:), out_saltzrotated.Calcaneus(13,:), out_saltzrotated.Talus(21,:), bonestl_saltztransformed.Tibia, bonestl_saltztransformed.Calcaneus, "xz", side_indx, XZ_viewer);
+    if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % Hindfoot Alignment Angle
+        angles.HAA = angle_calculator(out_tibiarotated.Calcaneus(7,:), out_tibiarotated.Talus(15,:), out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(4,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Calcaneus, "xz", side_indx, XZ_viewer);
     else
         angles.HAA = NaN;
     end
 
+    if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % 20 deg Hindfoot Alignment Angle
+        angles.HAA20 = angle_calculator(out_saltzrotated.Calcaneus(7,:), out_saltzrotated.Talus(15,:), out_saltzrotated.Tibia(1,:), out_saltzrotated.Tibia(4,:), bonestl_saltztransformed.Tibia, bonestl_saltztransformed.Calcaneus, "xz", side_indx, XZ_viewer);
+    else
+        angles.HAA20 = NaN;
+    end
+
+    if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Hindfoot Moment Arm
+        [angles.HMA, Q, segPts] = vect_distance_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(4,:), out_tibiarotated.Calcaneus(7,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Calcaneus, "xz", side_indx, XZ_viewer);
+    else
+        angles.HMA = NaN;
+    end
+
     if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Medial Distal Tibial Angle
-        angles.MDTA = abs(angle_calculator(out_rotated.Tibia(1,:), out_rotated.Tibia(4,:), out_rotated.Tibia(7,:), out_rotated.Tibia(8,:), bonestl_transformed.Tibia, bonestl_transformed.Tibia, "xz", side_indx, XZ_viewer));
+        angles.MDTA = abs(angle_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(4,:), out_tibiarotated.Tibia(7,:), out_tibiarotated.Tibia(8,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Tibia, "xz", side_indx, XZ_viewer));
     else
         angles.MDTA = NaN;
     end
 
     if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Tibial Lateral Surface Angle
-        angles.TLSA = angle_calculator(out_rotated.Tibia(9,:), out_rotated.Tibia(10,:), out_rotated.Tibia(1,:), out_rotated.Tibia(4,:), bonestl_transformed.Tibia, bonestl_transformed.Tibia, "yz", side_indx, YZ_viewer);
+        angles.TLSA = angle_calculator(out_tibiarotated.Tibia(9,:), out_tibiarotated.Tibia(10,:), out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(4,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Tibia, "yz", side_indx, YZ_viewer);
     else
         angles.TLSA = NaN;
     end
 
     if ismember(1,all_bone_indx) % Talar Neck Offset Angle XY
-        angles.TNOAXY = abs(angle_calculator(out_rotated.Talus(1,:), out_rotated.Talus(2,:), out_rotated.Talus(13,:), out_rotated.Talus(14,:), bonestl_transformed.Talus, bonestl_transformed.Talus, "xy", side_indx, XY_viewer));
+        angles.TNOAXY = abs(angle_calculator(out_rotated.Talus(1,:), out_rotated.Talus(2,:), out_rotated.Talus(7,:), out_rotated.Talus(8,:), bonestl_transformed.Talus, bonestl_transformed.Talus, "xy", side_indx, XY_viewer));
     else
         angles.TNOAXY = NaN;
     end
 
-    % if ismember(1,all_bone_indx) % Talar Neck Offset Angle YZ
-    %     angles.TNOAYZ = angle_calculator(out_rotated.Talus(13,:), out_rotated.Talus(14,:), out_rotated.Talus(1,:), out_rotated.Talus(2,:), bonestl_transformed.Talus, bonestl_transformed.Talus, "yz", side_indx, YZ_viewer);
-    % else
-    %     angles.TNOAYZ = NaN;
-    % end
-
     if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's Axial
-        angles.MA_axial = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Talus(13,:), out_rotated.Talus(14,:),  bonestl_transformed.Talus, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+        angles.MA_axial = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Talus(7,:), out_rotated.Talus(8,:),  bonestl_transformed.Talus, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
     else
         angles.MA_axial = NaN;
     end
 
     if ismember(1,all_bone_indx) && ismember(8,all_bone_indx) % Meary's Sagittal
-        angles.MA_sagittal = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Talus(19,:), out_rotated.Talus(20,:), bonestl_transformed.Talus, bonestl_transformed.Metatarsal1, "yz", side_indx, YZ_viewer);
+        angles.MA_sagittal = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Talus(13,:), out_rotated.Talus(14,:), bonestl_transformed.Talus, bonestl_transformed.Metatarsal1, "yz", side_indx, YZ_viewer);
     else
         angles.MA_sagittal = NaN;
     end
 
     if ismember (1,all_bone_indx) && ismember(3,all_bone_indx) % Talonavicular Angle
-        angles.TNA = angle_calculator( out_rotated.Navicular(1,:), out_rotated.Navicular(2,:),out_rotated.Talus(13,:), out_rotated.Talus(14,:), bonestl_transformed.Navicular, bonestl_transformed.Talus,"xy", side_indx, XY_viewer);
+        angles.TNA = angle_calculator( out_rotated.Navicular(1,:), out_rotated.Navicular(2,:),out_rotated.Talus(7,:), out_rotated.Talus(8,:), bonestl_transformed.Navicular, bonestl_transformed.Talus,"xy", side_indx, XY_viewer);
     else
         angles.TNA = NaN;
     end
     
     if ismember(2,all_bone_indx) && ismember(8,all_bone_indx) && ismember(12,all_bone_indx) % FAO
-        z_min_coords = [out_rotated.Calcaneus(16,:); out_rotated.Metatarsal1(7,:); out_rotated.Metatarsal5(7,:)]; % columns correspond to x y z values of most inferior points
-        angles.FAO = FAO_calculation(out_rotated.Calcaneus(16,:), out_rotated.Metatarsal1(7,:), out_rotated.Calcaneus(16,:), out_rotated.Metatarsal5(7,:), bonestl_transformed.Calcaneus, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal5, bonestl_transformed.Talus, "xy", out_rotated.Talus(21,:), z_min_coords, XY_viewer, side_indx);
+        z_min_coords = [out_rotated.Calcaneus(7,:); out_rotated.Metatarsal1(7,:); out_rotated.Metatarsal5(7,:)]; % columns correspond to x y z values of most inferior points
+        angles.FAO = FAO_calculation(out_rotated.Calcaneus(7,:), out_rotated.Metatarsal1(7,:), out_rotated.Calcaneus(7,:), out_rotated.Metatarsal5(7,:), bonestl_transformed.Calcaneus, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal5, bonestl_transformed.Talus, "xy", out_rotated.Talus(15,:), z_min_coords, XY_viewer, side_indx);
     else
         angles.FAO = NaN;
     end
@@ -324,73 +309,44 @@ for col = 1:width(data)
         angles.Intermet12 = NaN;
     end
 
-    % if ismember(1,all_bone_indx) % Talar Declination Angle
-    %     diffe = abs(out_rotated.Talus(2,:) - out_rotated.Talus(1,:));
-    %     [~, maxIndex] = max(diffe);
-    % 
-    %     if maxIndex == 2
-    %         AP_global = [out_rotated.Talus(1,1), out_rotated.Talus(2,2), out_rotated.Talus(1,3)];
-    %     elseif maxIndex == 1
-    %         AP_global = [out_rotated.Talus(2,1), out_rotated.Talus(1,2), out_rotated.Talus(1,3)];
-    %     elseif maxIndex == 3
-    %         AP_global = [out_rotated.Talus(1,1), out_rotated.Talus(1,2), out_rotated.Talus(2,3)];
-    %     end
-    % 
-    %     angles.TDA = angle_calculator(out_rotated.Talus(1,:), AP_global, out_rotated.Talus(1,:), out_rotated.Talus(2,:), bonestl_transformed.Talus, bonestl_transformed.Talus, "yz", side_indx, YZ_viewer);
-    % else
-    %     angles.TDA = NaN;
-    % end
-
     if ismember(2,all_bone_indx) && ismember(8,all_bone_indx) % Calcaneal 1st Metatarsal Angle
         angles.C1M = 180 - angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.Calcaneus, bonestl_transformed.Metatarsal1, "yz", side_indx, YZ_viewer);
     else
         angles.C1M = NaN;
     end
 
-    if ismember(13,all_bone_indx) && ismember(2,all_bone_indx) % Tibiocalcaneal Angle
-        angles.TibCA = angle_calculator( out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), out_rotated.Tibia(3,:), out_rotated.Tibia(4,:), bonestl_transformed.Tibia, bonestl_transformed.Calcaneus, "yz", side_indx, YZ_viewer);
+    if ismember(13,all_bone_indx) && ismember(2,all_bone_indx) % Sagittal Tibiocalcaneal Angle
+        angles.TibCA = angle_calculator(out_tibiarotated.Calcaneus(1,:), out_tibiarotated.Calcaneus(2,:), out_tibiarotated.Tibia(3,:), out_tibiarotated.Tibia(4,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Calcaneus, "yz", side_indx, YZ_viewer);
     else
         angles.TibCA = NaN;
     end
 
-    % if ismember(3,all_bone_indx) && ismember(2,all_bone_indx) % Navicular Ground Angle
-    %     diffe = abs(out_rotated.Navicular(2,:) - out_rotated.Navicular(1,:));
-    %     [~, maxIndex] = max(diffe);
-    % 
-    %     if maxIndex == 2
-    %         AP_global = [out_rotated.Navicular(1,1), out_rotated.Navicular(2,2), out_rotated.Navicular(1,3)];
-    %     elseif maxIndex == 1
-    %         AP_global = [out_rotated.Navicular(2,1), out_rotated.Navicular(1,2), out_rotated.Navicular(1,3)];
-    %     elseif maxIndex == 3
-    %         AP_global = [out_rotated.Navicular(1,1), out_rotated.Navicular(1,2), out_rotated.Navicular(2,3)];
-    %     end
-    % 
-    %     angles.NGA = angle_calculator(out_rotated.Navicular(1,:), AP_global, out_rotated.Calcaneus(16,:), out_rotated.Navicular(7,:), bonestl_transformed.Navicular, bonestl_transformed.Navicular, "yz", side_indx, YZ_viewer);
-    % else
-    %     angles.NGA = NaN;
-    % end
+    if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Axial Tibiocalcaneal Angle
+        angles.TibCAx = angle_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(2,:), out_tibiarotated.Calcaneus(1,:), out_tibiarotated.Calcaneus(2,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Calcaneus, "xy", side_indx, XY_viewer);
+    else
+        angles.TibCAx = NaN;
+    end
 
     %% Save Angles
     A = [
-        "Sagittal Talocalcaneal Angle",
-        "Axial Talocalcaneal Angle",
+        "Talocalcaneal Angle (Sagittal)",
+        "Talocalcaneal Angle (Axial)",
         "Calcaneal Inclination Angle",
         "Talar Tilt Angle",
         "Hindfoot Alignment Angle",
+        "20 deg Hindfoot Alignment Angle",
+        "Hindfoot Moment Arm",
         "Medial Distal Tibial Angle",
         "Tibial Lateral Surface Angle",
         "Talonavicular Offset Angle (Axial)",
-        % "Talonavicular Offset Angle (Sagittal)",
         "Meary's Angle (Axial)",
         "Meary's Angle (Sagittal)",
         "Talonavicular Angle",
         "Foot and Ankle Offset (%)",
         "Intermetatarsal 1-2",
-        % "Talar Declination Angle",
         "Calcaneal 1st Metatarsal Angle",
-        "Tibiocalcaneal Angle",
-        % "Navicular Ground Angle",
-        % "Medial-Lateral Column Ratio"
+        "Tibiocalcaneal Angle (Sagittal)",
+        "Tibiocalcaneal Angle (Axial)"
         ];
 
     if length(ind_name) > 31
@@ -405,6 +361,6 @@ for col = 1:width(data)
     xlfilename = strcat(folder_path,'Radiograph_Measurements_', FolderName, '.xlsx');
     writematrix(A,xlfilename,'Sheet',ind_name);
     writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
-    blankCells = repmat("", 37, 2); % here 3 columns; adjust as needed
-    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A16:B50');
+    blankCells = repmat("", 20, 2); % 2 columns; adjust as needed
+    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A19:B38');
 end
