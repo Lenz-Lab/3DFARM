@@ -1,7 +1,6 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY, NGA, TTA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, MEARY, TTA, HAA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
-
 vis = 0;
 z_min_xyz = [];
 
@@ -18,6 +17,14 @@ if bone_indx == 13
     cutting_plane2 = min(aligned_nodes(:,3)) + 100; % Temporarily shortens the tibia
     aligned_nodes = [aligned_nodes(aligned_nodes(:,3)>cutting_plane,1) aligned_nodes(aligned_nodes(:,3)>cutting_plane,2) aligned_nodes(aligned_nodes(:,3)>cutting_plane,3)];
     aligned_nodes = [aligned_nodes(aligned_nodes(:,3)<cutting_plane2,1) aligned_nodes(aligned_nodes(:,3)<cutting_plane2,2) aligned_nodes(aligned_nodes(:,3)<cutting_plane2,3)];
+end
+
+%% HAA backhalf
+if bone_indx == 2
+    nodes_aligned_original = aligned_nodes;
+    aligned_nodes_HAA = [aligned_nodes(aligned_nodes(:,2)<0,1) aligned_nodes(aligned_nodes(:,2)<0,2) aligned_nodes(aligned_nodes(:,2)<0,3)];
+else
+    aligned_nodes_HAA = aligned_nodes;
 end
 
 %% Split up the bone into nth sections in all three planes
@@ -58,10 +65,14 @@ positive_z_nth = z_max - nth_z;
 positive_z_nth_ROI = (aligned_nodes(:,3) >= positive_z_nth) & (aligned_nodes(:,1) >= 5);
 
 if bone_indx == 1 && bone_coord >= 2
-    while isempty(nonzeros(positive_z_nth_ROI)) % This accounts for if the postivie Z nth roi is not on the bone
-        iterator = 1;
-        positive_z_nth_ROI = (aligned_nodes(:,3) >= positive_z_nth-iterator) & (aligned_nodes(:,1) >= 5);
-        disp('looping')
+    step = 1;
+    z_min_allowed = min(aligned_nodes(:,3)); % stop before going below data
+    while ~any(positive_z_nth_ROI) && positive_z_nth > z_min_allowed
+        positive_z_nth = positive_z_nth - step;
+        positive_z_nth_ROI = (aligned_nodes(:,3) >= positive_z_nth) & (aligned_nodes(:,1) >= 5);
+    end
+    if ~any(positive_z_nth_ROI)
+        warning('No nodes found even after relaxing to z_min.');
     end
 end
 
@@ -88,8 +99,6 @@ if vis == 1
 end
 
 % Negative X Nth ROI TTA
-nth_z = range_z/7;
-
 negative_z_nth = z_max - nth_z;
 
 negative_z_nth_ROI = (aligned_nodes(:,3) >= negative_z_nth) & (aligned_nodes(:,1) <= -5);
@@ -235,122 +244,6 @@ if vis == 1
     axis equal
 end
 
-%% Just for Hindfoot Frontal
-
-av_positive_z_nth_hindfront = [NaN NaN NaN];
-
-% Initial values
-divider_x = 5;  % Starting divider for range_x
-divider_y = n;  % Starting divider for range_y
-
-% Loop until we have no NaNs in av_positive_z_nth_hindfront
-while any(isnan(av_positive_z_nth_hindfront))
-    
-    % Calculate nth_z and nth_y with the current dividers
-    nth_z = range_x / divider_x;
-    nth_y = range_y / divider_y;
-
-    positive_z_nth = z_max - nth_z;
-    negative_y_nth = y_min + nth_y;
-
-    positive_z_nth_ROI = aligned_nodes(:,3) >= positive_z_nth;
-    negative_y_nth_ROI = aligned_nodes(:,2) <= negative_y_nth;
-
-    positive_z_nth_x = nonzeros(aligned_nodes(:,1) .* positive_z_nth_ROI .* negative_y_nth_ROI);
-    positive_z_nth_y = nonzeros(aligned_nodes(:,2) .* positive_z_nth_ROI .* negative_y_nth_ROI);
-    positive_z_nth_z = nonzeros(aligned_nodes(:,3) .* positive_z_nth_ROI .* negative_y_nth_ROI);
-
-    av_positive_z_nth_x = mean(positive_z_nth_x);
-    av_positive_z_nth_y = mean(positive_z_nth_y);
-    av_positive_z_nth_z = mean(positive_z_nth_z);
-
-    av_positive_z_nth_hindfront = [av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z];
-
-    % Check if all values are no longer NaN, exit if true
-    if ~any(isnan(av_positive_z_nth_hindfront))
-        break;
-    end
-
-    % Systematically decrement dividers
-    divider_x = divider_x - 1;
-    divider_y = divider_y - 1;
-
-    % Stop if dividers become too small to avoid division errors
-    if divider_x < 1 || divider_y < 1
-        error('Could not find valid values. Dividers became too small.');
-    end
-    
-    % Optional Visualization
-    if vis == 1
-        figure()
-        plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
-        hold on
-        plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
-        plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
-        xlabel('X')
-        ylabel('Y')
-        zlabel('Z')
-        axis equal
-    end
-end
-
-av_negative_z_nth_hindfront = [NaN NaN NaN];
-
-% Initial values
-divider_x = 5;  % Starting divider for range_x
-divider_y = n;  % Starting divider for range_y
-
-% Loop until we have no NaNs in av_positive_z_nth_hindfront
-while any(isnan(av_negative_z_nth_hindfront))
-    
-    % Calculate nth_z and nth_y with the current dividers
-    nth_z = range_x / divider_x;
-    nth_y = range_y / divider_y;
-
-    negative_z_nth = z_min + nth_z;
-    negative_y_nth = y_min + nth_y;
-
-    negative_z_nth_ROI = aligned_nodes(:,3) <= negative_z_nth;
-    negative_y_nth_ROI = aligned_nodes(:,2) <= negative_y_nth;
-
-    negative_z_nth_x = nonzeros(aligned_nodes(:,1).*negative_z_nth_ROI.*negative_y_nth_ROI);
-    negative_z_nth_y = nonzeros(aligned_nodes(:,2).*negative_z_nth_ROI.*negative_y_nth_ROI);
-    negative_z_nth_z = nonzeros(aligned_nodes(:,3).*negative_z_nth_ROI.*negative_y_nth_ROI);
-
-    av_negative_z_nth_x = mean(negative_z_nth_x);
-    av_negative_z_nth_y = mean(negative_z_nth_y);
-    av_negative_z_nth_z = mean(negative_z_nth_z);
-
-    av_negative_z_nth_hindfront = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z];
-
-    % Check if all values are no longer NaN, exit if true
-    if ~any(isnan(av_negative_z_nth_hindfront))
-        break;
-    end
-
-    % Systematically decrement dividers
-    divider_x = divider_x - 1;
-    divider_y = divider_y - 1;
-
-    % Stop if dividers become too small to avoid division errors
-    if divider_x < 1 || divider_y < 1
-        error('Could not find valid values. Dividers became too small.');
-    end
-    
-    % Optional Visualization
-    if vis == 1
-        figure()
-        plot3(aligned_nodes(:,1), aligned_nodes(:,2), aligned_nodes(:,3), 'k.')
-        hold on
-        plot3(positive_z_nth_x, positive_z_nth_y, positive_z_nth_z, 'ys')
-        plot3(av_positive_z_nth_x, av_positive_z_nth_y, av_positive_z_nth_z, 'r.', 'MarkerSize', 50)
-        xlabel('X')
-        ylabel('Y')
-        zlabel('Z')
-        axis equal
-    end
-end
-
 %% Just for MEARY 
 % Positive Y Nth ROI MEARY
 nth_y = range_y/6;
@@ -399,6 +292,67 @@ av_negative_y_nth_MEARY = [av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y
 if vis == 1
     figure()
     plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
+    hold on
+    plot3(negative_y_nth_x,negative_y_nth_y,negative_y_nth_z,'ys')
+    plot3(av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+%% Just for HAA 
+% Positive Y Nth ROI HAA
+y_min_HAA = min(aligned_nodes_HAA(:,2));
+y_max_HAA = max(aligned_nodes_HAA(:,2));
+range_y_HAA = y_max_HAA - y_min_HAA;
+
+nth_y = range_y_HAA/5;
+
+positive_y_nth = y_max_HAA - nth_y;
+
+positive_y_nth_ROI = (aligned_nodes_HAA(:,2) >= positive_y_nth);
+
+positive_y_nth_x = nonzeros(aligned_nodes_HAA(:,1).*positive_y_nth_ROI);
+positive_y_nth_y = nonzeros(aligned_nodes_HAA(:,2).*positive_y_nth_ROI);
+positive_y_nth_z = nonzeros(aligned_nodes_HAA(:,3).*positive_y_nth_ROI);
+
+av_positive_y_nth_x = mean(positive_y_nth_x);
+av_positive_y_nth_y = mean(positive_y_nth_y);
+av_positive_y_nth_z = mean(positive_y_nth_z);
+
+av_positive_y_nth_HAA = [av_positive_y_nth_x,av_positive_y_nth_y,av_positive_y_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_HAA(:,1),aligned_nodes_HAA(:,2),aligned_nodes_HAA(:,3),'k.')
+    hold on
+    plot3(positive_y_nth_x,positive_y_nth_y,positive_y_nth_z,'ys')
+    plot3(av_positive_y_nth_x,av_positive_y_nth_y,av_positive_y_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+% Negative Y nth ROI HAA
+negative_y_nth = y_min_HAA + nth_y;
+
+negative_y_nth_ROI = (aligned_nodes_HAA(:,2) <= negative_y_nth);
+
+negative_y_nth_x = nonzeros(aligned_nodes_HAA(:,1).*negative_y_nth_ROI);
+negative_y_nth_y = nonzeros(aligned_nodes_HAA(:,2).*negative_y_nth_ROI);
+negative_y_nth_z = nonzeros(aligned_nodes_HAA(:,3).*negative_y_nth_ROI);
+
+av_negative_y_nth_x = mean(negative_y_nth_x);
+av_negative_y_nth_y = mean(negative_y_nth_y);
+av_negative_y_nth_z = mean(negative_y_nth_z);
+
+av_negative_y_nth_HAA = [av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_HAA(:,1),aligned_nodes_HAA(:,2),aligned_nodes_HAA(:,3),'k.')
     hold on
     plot3(negative_y_nth_x,negative_y_nth_y,negative_y_nth_z,'ys')
     plot3(av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z,'r.','MarkerSize',50)
@@ -602,32 +556,22 @@ else
     TLSA = [0,0,0; 0,0,0];
 end
 
-SVA = [0, 0, 0];
-HindFront = [0, 0, 0; 0, 0, 0];
-
-if bone_indx == 2
-    SVA = av_negative_z_nth;
-    if bone_coord == 1
-        HindFront = [av_negative_z_nth_hindfront; av_positive_z_nth_hindfront];
-    end
-end
-
 if bone_indx == 1
     MEARY = [av_negative_y_nth_MEARY; av_positive_y_nth_MEARY];
 else
     MEARY = [0,0,0; 0,0,0];
 end
 
-if bone_indx == 3
-    NGA = av_positive_x_nth_mdta;
-else
-    NGA = [0,0,0];
-end
-
 if bone_indx == 1 && bone_coord >= 2
     TTA = [av_positive_z_nth_tta; av_negative_z_nth_tta];
 else
     TTA = [0,0,0; 0,0,0];
+end
+
+if bone_indx == 2
+    HAA = [av_negative_y_nth_HAA; av_positive_y_nth_HAA];
+else
+    HAA = [0,0,0; 0,0,0];
 end
 
 origin = [0,0,0];
