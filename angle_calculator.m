@@ -1,137 +1,143 @@
 function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plane, side_indx, viewer, varargin)
+% ANGLE_CALCULATOR
+% angle = angle_calculator(startA,endA,startB,endB,bone1,bone2,plane,side_indx,viewer,[measurement])
+%
+% startA,endA,startB,endB : 1x3 vectors (points) defining two directed vectors
+% bone1,bone2              : structs with .ConnectivityList and .Points (from stlread)
+% plane                    : "yz","xz","xy","3D" (string or char)
+% side_indx                : 1 = right, 2 = left
+% viewer                   : optional 1x12 or 4x3 array of points [Astart Aend Bstart Bend] for camera framing (can be [])
+% measurement              : optional string for plot title/label
+%
+% Conventions (right-handed):
+%  - "yz" (about +X):    plantarflex (-) / dorsiflex (+); no mirroring by side
+%  - "xz" (about +Y):    inversion (-) / eversion (+); mirror for LEFT
+%  - "xy" (about +Z):    internal (-) / external (+); mirror for LEFT
+%
+% Returns signed angle in degrees.
 
-    % Check if 'measurement' was provided (using varargin for optional input)
-    if nargin > 9
-        measurement = varargin{1};
-    else
-        measurement = '';  % Default to an empty string or any default value
+% ---------- Optional label ----------
+if nargin > 9 && ~isempty(varargin{1})
+    measurement = string(varargin{1});
+else
+    measurement = "";
+end
+
+% ---------- Input hygiene ----------
+startA = startA(:).'; endA = endA(:).';
+startB = startB(:).'; endB = endB(:).';
+assert(numel(startA)==3 && numel(endA)==3 && numel(startB)==3 && numel(endB)==3, 'Points must be 1x3.');
+
+if ischar(plane), plane = string(plane); end
+plane = lower(plane);
+assert(ismember(plane, ["yz","xz","xy","3d"]), 'plane must be "yz","xz","xy","3D".');
+
+assert(ismember(side_indx,[1,2]), 'side_indx must be 1 (right) or 2 (left).');
+
+% ---------- Build direction vectors ----------
+v1 = endA - startA;
+v2 = endB - startB;
+
+% Guard against zero-length vectors
+nv1 = norm(v1);  nv2 = norm(v2);
+if nv1 < eps || nv2 < eps
+    angle = 0;
+    warning('One or both vectors have ~zero length; returning 0.');
+    return
+end
+
+% ---------- Plane setup via unit normal n ----------
+switch plane
+    case "xy", n = [0 0 1];  viewv = [0 90];
+    case "xz", n = [0 1 0];  viewv = [0 0];
+    case "yz", n = [1 0 0];  viewv = [-90 0]*(side_indx==1) + [90 0]*(side_indx==2);
+    case "3d", n = [];       viewv = [90 90]; % free 3D
+end
+
+% ---------- Project to plane (or keep 3D) ----------
+if plane ~= "3d"
+    % Project by removing normal component
+    v1 = v1 - dot(v1,n)*n;
+    v2 = v2 - dot(v2,n)*n;
+    % Re-guard after projection
+    if norm(v1) < eps || norm(v2) < eps
+        angle = 0;
+        warning('One or both vectors vanish after projection; returning 0.');
+        return
     end
+end
 
-    if plane == "yz"
-        if side_indx == 1
-            viewv = [-90 0];
+% ---------- Signed angle (general, stable) ----------
+% For 2D planes, sign is from n·(v1×v2); for 3D we fall back to unsigned
+if plane == "3d"
+    angle = acosd( max(-1,min(1, dot(v1,v2)/(norm(v1)*norm(v2)) )) );
+else
+    s = dot(n, cross(v1, v2));
+    c = dot(v1, v2);
+    angle = atan2d(s, c);
+end
+
+% ---------- Side mirroring (only for XY/XZ as described) ----------
+if side_indx == 2 % left
+    if plane == "xy" || plane == "xz"
+        angle = -angle;
+    end
+end
+
+% ---------- Visualization (optional) ----------
+if ~isempty(bone1) && ~isempty(bone2)
+    figure('Color','w'); hold on
+    p1 = patch('Faces',bone1.ConnectivityList,'Vertices',bone1.Points,...
+        'FaceColor',[0.85 0.85 0.85], 'EdgeColor','none','FaceLighting','gouraud','AmbientStrength',0.15);
+    alpha(p1,0.5)
+
+    p2 = patch('Faces',bone2.ConnectivityList,'Vertices',bone2.Points,...
+        'FaceColor',[0.85 0.85 0.85], 'EdgeColor','none','FaceLighting','gouraud','AmbientStrength',0.15);
+    alpha(p2,0.5)
+
+    % Arrows without external dependencies (replace 3rd-party "arrow")
+    plot_arrow_quiver(startA, endA, [0 0 1]); % blue
+    plot_arrow_quiver(startB, endB, [1 0 0]); % red
+
+    % Try to center camera sensibly if viewer provided
+    if ~isempty(viewer)
+        % Accept 1x12 or 4x3
+        if numel(viewer)==12
+            V = reshape(viewer, [3,4]).'; % rows = [Astart Aend Bstart Bend]
+        elseif isequal(size(viewer),[4,3])
+            V = viewer;
         else
-            viewv = [90 0];
+            warning('viewer must be 1x12 or 4x3; ignoring.');
+            V = [];
         end
-        ref_axis = [1, 0, 0]; % X-axis as the reference for YZ plane (Plantarflexion/Dorsiflexion)
-    elseif plane == "xz"
-        viewv = [0 0];
-        ref_axis = [0, -1, 0]; % Y-axis as the reference for XZ plane (Inversion/Eversion)
-    elseif plane == "xy"
-        viewv = [0 90];
-        ref_axis = [0, 0, -1]; % Z-axis as the reference for XY plane (Internal/External rotation)
-    else
-        viewv = [90 90];
-        ref_axis = [0, 0, 0]; % No reference for 3D case
-    end
-
-    vector_A = viewer(:,4:6) - viewer(:,1:3);
-    vector_B = viewer(10:12) - viewer(:,7:9);
-
-    % Compute the cross product vector.
-    crossVec = cross(vector_A, vector_B);
-
-    % Normalize the cross product vector.
-    crossVec_norm = crossVec / norm(crossVec);
-
-    targetPoint = viewer(:,1:3);
-    distance = 100;
-
-    % Set the camera position along the cross product vector.
-    camPos = targetPoint + distance * crossVec_norm;
-
-    figure()
-    patch('Faces',bone1.ConnectivityList,'Vertices',bone1.Points,...
-        'FaceColor', [0.85 0.85 0.85], ...
-        'EdgeColor','none',...
-        'FaceLighting','gouraud',...
-        'AmbientStrength', 0.15);
-    alpha(0.5)
-    hold on
-    patch('Faces',bone2.ConnectivityList,'Vertices',bone2.Points,...
-        'FaceColor', [0.85 0.85 0.85], ...
-        'EdgeColor','none',...
-        'FaceLighting','gouraud',...
-        'AmbientStrength', 0.15);
-    alpha(0.5)
-    view(viewv)
-    % Set camera properties:
-    % camtarget(targetPoint);   % The point the camera looks at
-    % campos(camPos);           % Position the camera along the cross product direction
-    camlight HEADLIGHT
-    material('dull');
-    axis equal
-    axis off
-    xlabel('x')
-    ylabel('y')
-    zlabel('z')
-    set(gca, 'XTick', [], 'YTick', [], 'ZTick', [])
-
-    plot_arrow(startA, endA, [0 0 1]);
-    plot_arrow(startB, endB, [1 0 0]);
-
-    angle = ang_bet(startA, endA, startB, endB, plane, ref_axis, side_indx);
-
-    function plot_arrow(origin, direction, color)
-        dir_normalized = 50 * (direction - origin) / norm(direction - origin);
-        arrow(origin, origin + dir_normalized, 'FaceColor', color, 'EdgeColor', color, 'LineWidth', 2, 'Length', 7);
-    end
-
-    function angle_between = ang_bet(startA, endA, startB, endB, plane, ref_axis, side_indx)
-        % Calculate the direction vectors
-        vector1 = endA - startA;
-        vector2 = endB - startB;
-
-        if plane == "xy"
-            vector1_new = [vector1(1), vector1(2), 0];
-            vector2_new = [vector2(1), vector2(2), 0];
-        elseif plane == "xz"
-            vector1_new = [vector1(1), 0, vector1(3)];
-            vector2_new = [vector2(1), 0, vector2(3)];
-        elseif plane == "yz"
-            vector1_new = [0, vector1(2), vector1(3)];
-            vector2_new = [0, vector2(2), vector2(3)];
-        elseif plane == "3D"
-            vector1_new = vector1;
-            vector2_new = vector2;
-        end
-
-        % Calculate the cross product and dot product of the projected vectors
-        cross_product = cross(vector1_new, vector2_new);
-        dot_product = dot(vector1_new, vector2_new);
-
-        % Calculate the angle using atan2d
-        % angle_between = atan2d(norm(cross_product), dot_product);
-        % angle_between = atan2d(cross_product(1), dot_product);
-
-        % Adjust for lateralities (mirroring behavior for left bones)
-        if plane == "yz"
-            % Plantarflexion (negative) vs. Dorsiflexion (positive) - no mirroring needed
-            angle_between = atan2d(cross_product(1), dot_product);
-            % sign_of_angle = dot(cross_product, ref_axis);
-            % if sign_of_angle > 0
-            %     angle_between = -angle_between;
-            % end
-        elseif plane == "xy"
-            % Internal (negative) vs. External (positive) rotation - mirrored for left side
-            angle_between = atan2d(cross_product(3), dot_product);
-            sign_of_angle = dot(cross_product, ref_axis);
-            % if sign_of_angle > 0
-                % angle_between = -angle_between;
-            % end
-            if side_indx == 2  % Left bone
-                angle_between = -angle_between;  % Mirror for left side
-            end
-        elseif plane == "xz"
-            % Inversion (negative) vs. Eversion (positive) - mirrored for left side
-            angle_between = atan2d(cross_product(2), dot_product);
-            sign_of_angle = dot(cross_product, ref_axis);
-            if sign_of_angle > 0
-                angle_between = -angle_between;
-            end
-            if side_indx == 2  % Left bone
-                % angle_between = -angle_between;  % Mirror for left side
-            end
+        if ~isempty(V)
+            targetPoint = mean(V,1);
+            % Use cross of vector directions to pick a sensible camera offset
+            vecA = V(2,:)-V(1,:); vecB = V(4,:)-V(3,:);
+            cr = cross(vecA,vecB);  if norm(cr)<eps, cr = [0 0 1]; end
+            cr = cr / norm(cr);
+            camPos = targetPoint + 100 * cr;
+            camtarget(targetPoint);
+            campos(camPos);
         end
     end
+
+    view(viewv);
+    camlight HEADLIGHT; material dull
+    axis equal off
+    xlabel('x'); ylabel('y'); zlabel('z'); set(gca,'XTick',[],'YTick',[],'ZTick',[])
+    ttl = "Angle = " + sprintf('%.2f°',angle);
+    if measurement ~= "" , ttl = measurement + "  —  " + ttl; end
+    title(ttl, 'Interpreter','none')
+end
+end
+
+% ------- Helpers -------
+function plot_arrow_quiver(p0, p1, col)
+d  = p1 - p0;
+L  = norm(d);
+if L < eps, return; end
+u  = (50/L) * d; % consistent display length
+quiver3(p0(1),p0(2),p0(3), u(1),u(2),u(3), 0, ...
+    'LineWidth',2,'MaxHeadSize',0.5,'Color',col);
 end
