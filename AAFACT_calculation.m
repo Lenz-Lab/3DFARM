@@ -13,22 +13,12 @@ end
 
 %% Setup which bone coordinate systems needed to be calculated
 if bone_indx == 1
-    bone_coord = [1, 2, 3]; % TN&TT&ST
+    bone_coord = [1, 2]; % TN&TT
 elseif bone_indx == 2
-    bone_coord = [1, 2]; % CC&ST
+    bone_coord = 1; % CC
 else
     bone_coord = 1; % Others
 end
-
-% Lists for detemining bone and side
-list_bone = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
-    'Lateral_Cuneiform','Metatarsal1','Metatarsal2','Metatarsal3','Metatarsal4','Metatarsal5',...
-    'Tibia','Fibula'};
-list_bone2 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
-    'Lat_Cuneiform','First_Metatarsal','Second_Metatarsal','Third_Metatarsal','Fourth_Metatarsal','Fifth_Metatarsal',...
-    'Tibia','Fibula'};
-list_side_folder = {'Right','_R.','_R_','Left','_L.','_L_'};
-list_side = {'Right','Left'};
 
 nodes_original = TR_bone.Points;
 conlist_original = TR_bone.ConnectivityList;
@@ -52,16 +42,14 @@ for n = 1:length(bone_coord)
     % medial region is in the positive X direction.
     [nodes,cm_nodes] = center(nodes,1);
     better_start = 1;
-    [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start, 1);
+    [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start);
 
     %% Performs coordinate system calculation
-    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, SVA, HindFront, z_min_xyz, MEARY, NGA, TTA] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
+    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, MEARY, TTA, HAA] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
 
     %% Joint Origin
     if joint_indx > 1
-        [Temp_Coordinates, Joint] = JointOrigin(Temp_Coordinates, Temp_Nodes, conlist, bone_indx, joint_indx, side_indx);
-    else
-        Joint = "Center";
+        [Temp_Coordinates, ~] = JointOrigin(Temp_Coordinates, Temp_Nodes, conlist, bone_indx, joint_indx, side_indx);
     end
 
     if bone_indx == 1 && bone_coord(n) == 2
@@ -73,27 +61,10 @@ for n = 1:length(bone_coord)
     end
 
     %% Temporarily Attach Coordinate System
-    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; TTA; NGA; FAO_peak; z_min_xyz; MEARY; HindFront; MDTA; TLSA; SVA];
+    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; HAA; TTA; FAO_peak; z_min_xyz; MEARY; MDTA; TLSA];
 
     %% Reorient and Translate to Original Input Origin and Orientation
-    [~, coords_final, coords_final_unit, ~, TTA_final, NGA_final, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
-
-    if bone_indx == 1 && bone_coord(n) == 3 % Additional alignment for talus subtalar ACS
-        [aligned_nodes_TST, RTs_TST] = icp_template(bone_indx, nodes, 1, better_start, 1);
-        [Temp_Coordinates_TST, Temp_Nodes_TST] = CoordinateSystem(aligned_nodes_TST, bone_indx, 1, side_indx);
-
-        Temp_Nodes_Coords_TST = [Temp_Nodes_TST; Temp_Coordinates_TST; TTA; NGA; FAO_peak; z_min_xyz; MEARY;  HindFront; MDTA; TLSA; SVA];
-
-        [~, coords_final_TST, coords_final_unit_TST, ~, TTA_final, NGA_final, talus_coords_FAO, z_min_xyz_final, MEARY_final, HindFront_Final, MDTA_final, TLSA_final, SVA_final] = reorient(Temp_Nodes_Coords_TST, cm_nodes, side_indx, RTs_TST);
-
-        coords_final = [coords_final(1,:); ((coords_final_TST(2,:) + coords_final(2,:)).'/2)'
-            coords_final(3,:); ((coords_final_TST(4,:) + coords_final(4,:)).'/2)'
-            coords_final(5,:); ((coords_final_TST(6,:) + coords_final(6,:)).'/2)'];
-
-        coords_final_unit = [coords_final_unit(1,:); ((coords_final_unit_TST(2,:) + coords_final_unit(2,:)).'/2)'
-            coords_final_unit(3,:); ((coords_final_unit_TST(4,:) + coords_final_unit(4,:)).'/2)'
-            coords_final_unit(5,:); ((coords_final_unit_TST(6,:) + coords_final_unit(6,:)).'/2)'];
-    end
+    [~, coords_final, coords_final_unit, ~, HAA_final, TTA_final, talus_coords_FAO, z_min_xyz_final, MEARY_final, MDTA_final, TLSA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
 
     %% Final Plotting
     % screen_size = get(0, 'ScreenSize');
@@ -131,34 +102,28 @@ for n = 1:length(bone_coord)
     % zlabel('Z')
     % axis equal
 
-
     %% Save both coordinate systems to spreadsheet
+    % coords_final_unit = [origin; AP vector; origin; SI vector; origin; ML vector]
     switch bone_indx
         case 1 % Talus
             switch bone_coord(n)
                 case 2 % TT Talus
                     out(1:6, :) = coords_final_unit;
-                    out(21, :) = talus_coords_FAO;
-                    out(22:23, :) = TTA_final;
-                case 3 % ST Talus
-                    out(7:12, :) = coords_final_unit;
+                    out(15, :) = talus_coords_FAO;
+                    out(16:17, :) = TTA_final;
                 case 1 % TN Talus
-                    out(13:18, :) = coords_final_unit;
-                    out(19:20, :) = MEARY_final;
+                    out(7:12, :) = coords_final_unit;
+                    out(13:14, :) = MEARY_final;
             end
         case 2 % Calcaneus
             switch bone_coord(n)
                 case 1 % CC Calc
                     out(1:6, :) = coords_final_unit;
-                    out(13, :) = SVA_final;
-                    out(14:15, :) = HindFront_Final;
-                    out(16, :) = z_min_xyz_final;
-                case 2 % ST Calc
-                    out(7:12, :) = coords_final_unit;
+                    out(7, :) = z_min_xyz_final;
+                    out(8:9, :) = HAA_final;
             end
         case 3 % Navicular
             out(1:6, :) = coords_final_unit;
-            out(7, :) = NGA_final;
         case 8 % Metatarsal 1
             out(1:6, :) = coords_final_unit;
             out(7, :) = z_min_xyz_final;
@@ -166,7 +131,9 @@ for n = 1:length(bone_coord)
             out(1:6, :) = coords_final_unit;
             out(7, :) = z_min_xyz_final;
         case 13 % Tibia
-            out = [coords_final_unit; MDTA_final; TLSA_final];
+            out(1:6, :) = coords_final_unit;
+            out(7:8, :) = MDTA_final;
+            out(9:10, :) = TLSA_final;
         otherwise
             out = coords_final_unit;
     end
