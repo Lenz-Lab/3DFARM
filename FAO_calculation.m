@@ -127,9 +127,14 @@ function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, 
                           (intersection_point(2) - intersection_on_bisecting_line(2))^2 + ...
                           (intersection_point(3) - intersection_on_bisecting_line(3))^2);
     % flip sign based on foot laterality
-    if intersection_point(1) < intersection_on_bisecting_line(1) && side_indx == 1
+    % right foot
+    if intersection_point(1) > intersection_on_bisecting_line(1) && side_indx == 1 % talus on lateral side, varus
         talus_distance = talus_distance * -1;
     end
+    % left foot
+    if intersection_point(1) < intersection_on_bisecting_line(1) && side_indx == 2 % talus on lateral side, varus
+        talus_distance = talus_distance * -1;
+    end    
     foot_distance = sqrt((end_C(1) - startA(1))^2 + (end_C(2) - startA(2))^2 + (end_C(3) - startA(3))^2);
     % Compute FAO
     FAO = (talus_distance / foot_distance)*100;
