@@ -35,6 +35,10 @@ else
     selected_sheet = sheets{1};
 end
 
+choice = questdlg('Are you troublshooting alignment?', ...
+    'Troubleshoot?', 'Yes', 'No', 'No');
+trouble = strcmp(choice,'Yes');
+
 data = readtable(sheet_path, 'ReadVariableNames', false, 'Sheet', selected_sheet);
 temp = strfind(folder_path,'\');
 FolderName = folder_path(temp(end-1)+1:end-1);
@@ -55,7 +59,7 @@ list_bone3 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','I
 list_bone4 = {'Talus', 'Calc', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','1st_Met','2nd_Met','3rd_Met','4th_Met','5th_Met',...
     'Tibia','Fibula'};
-list_side_folder = {'Right','_R.','_R_','_R ','_R\','Left','_L.','_L_','_L ','_L\'};
+list_side_folder = {'Right','_R.','_R_','_R ','_R\','_R','Left','_L.','_L_','_L ','_L\','_L'};
 list_side = {'Right','Left'};
 
 %% Iterate through each person (column)
@@ -100,10 +104,20 @@ for col = 1:width(data)
             end
         end
 
+        % Looks at the column name for the bone laterality
+        if ~exist('side_folder_indx', 'var')
+            for n = 1:length(list_side_folder)
+                if contains(lower(ind_name), lower(list_side_folder{n}))
+                    side_folder_indx = n;
+                    break;
+                end
+            end
+        end
+
         % If the folder and the file don't have the bone side, the user must select
-        if exist('side_folder_indx', 'var') && side_folder_indx <= 5
+        if exist('side_folder_indx', 'var') && side_folder_indx <= 6
             side_indx = 1;
-        elseif exist('side_folder_indx', 'var') && side_folder_indx >= 6
+        elseif exist('side_folder_indx', 'var') && side_folder_indx >= 7
             side_indx = 2;
         else
             [side_indx, ~] = listdlg('PromptString', [{strcat('Select which side this file is:', " ", string(FileName))} {''}], 'ListString', list_side, 'SelectionMode', 'single');
@@ -146,6 +160,107 @@ for col = 1:width(data)
         end
     end
 
+    %% PreAlignment
+    addpath(fullfile("Template_Bones","Anatomical_Bones"));
+
+    % Decide side folder
+    if side_indx == 1
+        side_str = "Right";
+    elseif side_indx == 2
+        side_str = "Left";
+    else
+        error('side_indx must be 1 (Right) or 2 (Left).');
+    end
+
+    % Unique bone indices actually loaded for this person
+    bone_inds_unique = unique(all_bone_indx(:)');
+
+    % Build combined SUBJECT tri
+    allPts = [];
+    allTri = [];
+    boneRanges = struct('name', {}, 'v_idx', {}, 'f_idx', {});
+
+    for i = 1:numel(bone_inds_unique)
+        bidx = bone_inds_unique(i);
+        boneName = list_bone{bidx};
+
+        TRb = bonestl.(boneName);
+        V   = TRb.Points;
+        F   = TRb.ConnectivityList;
+
+        offsetV = size(allPts, 1);
+        offsetF = size(allTri, 1);
+        allPts = [allPts; V]; %#ok<AGROW>
+        allTri = [allTri; F + offsetV]; %#ok<AGROW>
+
+        v_idx = (offsetV + 1) : (offsetV + size(V,1));
+        f_idx = (offsetF + 1) : (offsetF + size(F,1));
+        boneRanges(end+1) = struct('name', boneName, 'v_idx', v_idx, 'f_idx', f_idx); %#ok<SAGROW>
+    end
+
+    TR_subject_combined = triangulation(allTri, allPts);
+    TR_subject_combined = center(TR_subject_combined,3);
+
+    % Build combined TEMPLATE tri
+    template_root = fullfile("Template_Bones","Anatomical_Bones", side_str);
+
+    allPtsT = [];
+    allTriT = [];
+
+    for i = 1:numel(bone_inds_unique)
+        bidx = bone_inds_unique(i);
+        boneName = list_bone{bidx};
+
+        tpl_path = fullfile(template_root, boneName + ".stl");
+        if ~exist(tpl_path, 'file')
+            continue
+        end
+
+        TRt = stlread(tpl_path);
+        Vt  = TRt.Points;
+        Ft  = TRt.ConnectivityList;
+
+        offsetT = size(allPtsT,1);
+        allPtsT = [allPtsT; Vt]; %#ok<AGROW>
+        allTriT = [allTriT; Ft + offsetT]; %#ok<AGROW>
+    end
+
+    TR_template_combined = triangulation(allTriT, allPtsT);
+
+    if trouble == 0
+        [aligned_subject_combined_points] = icp_complete(TR_template_combined.Points,TR_subject_combined.Points,TR_template_combined.ConnectivityList,2,trouble);
+    elseif trouble == 1
+        manual_aligned_subject_combined_points = manual_align_points(TR_subject_combined.Points, side_indx);
+        [aligned_subject_combined_points] = icp_complete(TR_template_combined.Points,manual_aligned_subject_combined_points,TR_template_combined.ConnectivityList,2,trouble);
+    end
+
+    % A fast global -> local index map we’ll reuse and reset per bone
+    Ntot = size(aligned_subject_combined_points, 1);
+    global2local = zeros(Ntot, 1, 'uint32');
+
+    for k = 1:numel(boneRanges)
+        boneName = boneRanges(k).name;
+        v_idx    = boneRanges(k).v_idx;   % global vertex indices for this bone
+        f_idx    = boneRanges(k).f_idx;   % face ROWS (in allTri) for this bone
+
+        % Vertices for this bone (already aligned)
+        Vb = aligned_subject_combined_points(v_idx, :);
+
+        % Global faces that belong to this bone
+        Fb_global = allTri(f_idx, :);
+
+        % Build local remap: global -> [1..numel(v_idx)]
+        global2local(:) = 0;
+        global2local(v_idx) = uint32(1:numel(v_idx));
+        Fb_local = [ global2local(Fb_global(:,1)), ...
+            global2local(Fb_global(:,2)), ...
+            global2local(Fb_global(:,3)) ];
+
+        % Construct aligned triangulation for this bone
+        bonestl.(boneName) = triangulation(double(Fb_local), double(Vb));
+    end
+
+    %% AAFACT calculations
     for j = 1:length(all_bone_indx)
         if ismember(all_bone_indx(j), [1, 2, 3, 8, 9, 12, 13])
             AAFACT_bone = list_bone{all_bone_indx(j)};

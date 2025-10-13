@@ -29,7 +29,7 @@ for n = 1:length(bone_coord)
     conlist = conlist_original;
 
     if side_indx == 1
-        nodes = nodes .* [1,1,-1];
+        nodes = nodes .* [-1,1,1];
         conlist = [conlist(:,3) conlist(:,2) conlist(:,1)];
     end
 
@@ -42,7 +42,7 @@ for n = 1:length(bone_coord)
     % medial region is in the positive X direction.
     [nodes,cm_nodes] = center(nodes,1);
     better_start = 1;
-    [aligned_nodes, RTs] = icp_template(bone_indx, nodes, bone_coord(n), better_start);
+    [aligned_nodes, RTs] = icp_template_simp(bone_indx, nodes, bone_coord(n), better_start);
 
     %% Performs coordinate system calculation
     [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, MEARY, TTA, HAA] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);

@@ -1,4 +1,4 @@
-function [aligned_nodes, RTs] = icp_template(bone_indx,nodes,bone_coord,better_start)
+function [aligned_nodes, RTs] = icp_template_simp(bone_indx,nodes,bone_coord,better_start)
 % This function aligned the user input bone to a predefined template bone.
 % It requires the bone index bone to identify which bone was chosen
 % (bone_indx), the bone nodal points (nodes), the coordinate system chosen
@@ -71,31 +71,31 @@ end
 nodes_template = TR_template.Points;
 con_temp = TR_template.ConnectivityList;
 
-if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3 || bone_indx == 13) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
-    [eigenvectors, ~] = eig(cov(nodes));
-
-    [~, idx] = sort(diag(cov(nodes)), 'descend');
-    primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
-
-    if bone_indx == 13
-        target_direction = [0; 0; -1];
-    else
-        target_direction = [0; 1; 0];
-    end
-
-    rotation_axis = cross(primary_axis, target_direction);
-    rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
-    theta = acos(dot(primary_axis, target_direction)); % Rotation angle
-
-    K = [0, -rotation_axis(3), rotation_axis(2);
-        rotation_axis(3), 0, -rotation_axis(1);
-        -rotation_axis(2), rotation_axis(1), 0]; % Skew-symmetric matrix
-    Rmetpca = eye(3) + sin(theta) * K + (1 - cos(theta)) * (K * K);
-
-    nodes = (Rmetpca * nodes')'; % Transpose for matrix multiplication
-else
+% if (bone_indx >= 8 && bone_indx <= 12) || (bone_indx == 1) || (bone_indx == 3 || bone_indx == 13) % Use PCA to give a starting alignment point for metatarsals, talus, navicular
+%     [eigenvectors, ~] = eig(cov(nodes));
+% 
+%     [~, idx] = sort(diag(cov(nodes)), 'descend');
+%     primary_axis = eigenvectors(:, idx(1)); % Primary principal axis
+% 
+%     if bone_indx == 13
+%         target_direction = [0; 0; -1];
+%     else
+%         target_direction = [0; 1; 0];
+%     end
+% 
+%     rotation_axis = cross(primary_axis, target_direction);
+%     rotation_axis = rotation_axis / norm(rotation_axis); % Normalize
+%     theta = acos(dot(primary_axis, target_direction)); % Rotation angle
+% 
+%     K = [0, -rotation_axis(3), rotation_axis(2);
+%         rotation_axis(3), 0, -rotation_axis(1);
+%         -rotation_axis(2), rotation_axis(1), 0]; % Skew-symmetric matrix
+%     Rmetpca = eye(3) + sin(theta) * K + (1 - cos(theta)) * (K * K);
+% 
+%     nodes = (Rmetpca * nodes')'; % Transpose for matrix multiplication
+% else
     Rmetpca = [];
-end
+% end
 
 max_nodes_x = (max(nodes(:,1)) - min(nodes(:,1)));
 max_nodes_y = (max(nodes(:,2)) - min(nodes(:,2)));
@@ -167,7 +167,7 @@ end
 %                 k = k + 1;
 %             end
 %         end
-% 
+%
 %         nodes_template = [nodes_template(:,1) nodes_template(:,2) nodes_template(:,3);
 %             plane(:,1) plane(:,2) plane(:,3)];
 %     end
@@ -186,113 +186,17 @@ elseif parttib_multiplier > 1 && tibfib_switch == 2 && bone_indx >= 13
 end
 
 %% Performing ICP alignment
-% This is the initial alignment with no rotation. 
+% This is the initial alignment with no rotation.
 % Two different icp approaches are used, the first includeds the faces and
 % the second is just the points.
 
 format long g
 iterations = 100;
+maxDeg = 90;
 
 % Rotations
 r.r0 = eye(3);
-r.rx = rotx(90);
-r.rxx = rotx(180);
-r.rxxx = rotx(270);
-r.ry = roty(90);
-r.ryy = roty(180);
-r.ryyy = roty(270);
-r.rz = rotz(90);
-r.rzz = rotz(180);
-r.rzzz = rotz(270);
-
-r.rxy = rotx(90) * roty(90);
-r.rxyy = rotx(90) * roty(180);
-r.rxyyy = rotx(90) * roty(270);
-
-r.rxxy = rotx(180) * roty(90);
-r.rxxyy = rotx(180) * roty(180);
-r.rxxyyy = rotx(180) * roty(270);
-
-r.rxxxy = rotx(270) * roty(90);
-r.rxxxyy = rotx(270) * roty(180);
-r.rxxxyyy = rotx(270) * roty(270);
-
-r.rxz = rotx(90) * rotz(90);
-r.rxzz = rotx(90) * rotz(180);
-r.rxzzz = rotx(90) * rotz(270);
-
-r.rxxz = rotx(180) * rotz(90);
-r.rxxzz = rotx(180) * rotz(180);
-r.rxxzzz = rotx(180) * rotz(270);
-
-r.rxxxz = rotx(270) * rotz(90);
-r.rxxxzz = rotx(270) * rotz(180);
-r.rxxxzzz = rotx(270) * rotz(270);
-
-r.ryx = roty(90) * rotx(90);
-r.ryxx = roty(90) * rotx(180);
-r.ryxxx = roty(90) * rotx(270);
-
-r.ryyx = roty(180) * rotx(90);
-r.ryyxx = roty(180) * rotx(180);
-r.ryyxxx = roty(180) * rotx(270);
-
-r.ryyyx = roty(270) * rotx(90);
-r.ryyyxx = roty(270) * rotx(180);
-r.ryyyxxx = roty(270) * rotx(270);
-
-r.ryz = roty(90) * rotz(90);
-r.ryzz = roty(90) * rotz(180);
-r.ryzzz = roty(90) * rotz(270);
-
-r.ryyz = roty(180) * rotz(90);
-r.ryyzz = roty(180) * rotz(180);
-r.ryyzzz = roty(180) * rotz(270);
-
-r.ryyyz = roty(270) * rotz(90);
-r.ryyyzz = roty(270) * rotz(180);
-r.ryyyzzz = roty(270) * rotz(270);
-
-r.rzx = rotz(90) * rotx(90);
-r.rzxx = rotz(90) * rotx(180);
-r.rzxxx = rotz(90) * rotx(270);
-
-r.rzzx = rotz(180) * rotx(90);
-r.rzzxx = rotz(180) * rotx(180);
-r.rzzxxx = rotz(180) * rotx(270);
-
-r.rzzzx = rotz(270) * rotx(90);
-r.rzzzxx = rotz(270) * rotx(180);
-r.rzzzxxx = rotz(270) * rotx(270);
-
-r.rzy = rotz(90) * roty(90);
-r.rzyy = rotz(90) * roty(180);
-r.rzyyy = rotz(90) * roty(270);
-
-r.rzzy = rotz(180) * roty(90);
-r.rzzyy = rotz(180) * roty(180);
-r.rzzyyy = rotz(180) * roty(270);
-
-r.rzzzy = rotz(270) * roty(90);
-r.rzzzyy = rotz(270) * roty(180);
-r.rzzzyyy = rotz(270) * roty(270);
-
 fields = fieldnames(r);
-
-if better_start == 2
-    field_name = fields{1};
-    [R_temp,T_temp,E_temp] = icp(nodes_template',nodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp);
-    [Rwr_temp,Twr_temp,Ewr_temp] = icp(nodes_template',nodes', iterations,'Matching','kDtree','WorstRejection',0.1);
-    if E_temp(end) < Ewr_temp(end)
-        R.(field_name) = R_temp;
-        T.(field_name) = T_temp;
-        E.(field_name) = E_temp(end);
-    else
-        R.(field_name) = Rwr_temp;
-        T.(field_name) = Twr_temp;
-        E.(field_name) = Ewr_temp(end);
-    end
-end
 
 if better_start == 1
     iterations_temp = 3;
@@ -313,23 +217,34 @@ if better_start == 1
     % Get the 5 corresponding field names (rotation matrices)
     smallest_fields = E_short_fields(idx_smallest);
 
-    % Rerun the loop with 200 iterations on the 5 smallest error rotations
+    % Rerun the loop with 100 iterations on the 5 smallest error rotations
 
     for i = 1:numel(smallest_fields)
         field_name = smallest_fields{i};  % Get the field name of the current rotation
         rot = r.(field_name);  % Access the corresponding rotation matrix
         rotnodes = nodes * rot;  % Multiply nodes by the rotation matrix
-        [R_temp,T_temp,E_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp);
-        [Rwr_temp,Twr_temp,Ewr_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','WorstRejection',0.1);
+
+        [R_temp,T_temp,E_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','EdgeRejection',logical(1),'Triangulation',con_temp,'MaxRotationDeg',90);
+        [Rwr_temp,Twr_temp,Ewr_temp] = icp(nodes_template',rotnodes', iterations,'Matching','kDtree','WorstRejection',0.1,'MaxRotationDeg',90);
+
+        % Pick the better ICP result
         if E_temp(end) < Ewr_temp(end)
-            R.(field_name) = R_temp;
-            T.(field_name) = T_temp;
-            E.(field_name) = E_temp(end);
+            Rcand = R_temp; 
+            Tcand = T_temp; 
+            Ecand = E_temp(end);
         else
-            R.(field_name) = Rwr_temp;
-            T.(field_name) = Twr_temp;
-            E.(field_name) = Ewr_temp(end);
+            Rcand = Rwr_temp; 
+            Tcand = Twr_temp; 
+            Ecand = Ewr_temp(end);
         end
+
+        % cap both the step (Rcand) and the net rotation (Rcand*rot) to <= maxDeg
+        % Rcand = capRotation(Rcand, rot, maxDeg);
+
+        % Store
+        R.(field_name) = Rcand;
+        T.(field_name) = Tcand;
+        E.(field_name) = Ecand;
     end
 end
 
@@ -372,75 +287,75 @@ end
 
 % This ensures the tibial coordinate system is at the center of the tibial
 % plafond
-if (tibfib_switch == 1 && bone_indx == 13) || (tibfib_switch == 1 && bone_indx == 14)
-    temp = find(aligned_nodes(:,3) < 150);
-    nodes_test = [aligned_nodes(temp,1) aligned_nodes(temp,2) aligned_nodes(temp,3)];
-    x = (-20:4:20)';
-    y = (-20:4:20)';
-    [x, y] = meshgrid(x,y);
-    z = (max(nodes_test(:,3))) .* ones(length(x(:,1)),1);
-    k = 1;
-    for n = 1:length(z)
-        for m = 1:length(z)
-            plane(k,:) = [x(m,n) y(m,n) z(1)];
-            k = k + 1;
-        end
-    end
-
-    nodes_test1 = [nodes_test(:,1) nodes_test(:,2) nodes_test(:,3);
-        plane(:,1) plane(:,2) plane(:,3)];
-
-    nodes_test2 = nodes_test1*rotz(90);
-    nodes_test3 = nodes_test1*rotz(180);
-    nodes_test4 = nodes_test1*rotz(270);
-
-    [Rtw1,Ttw1,Etw1] = icp(nodes_template',nodes_test1', iterations,'Matching','kDtree','WorstRejection',0.1);
-
-    if better_start == 1
-        [Rtw2,Ttw2,Etw2] = icp(nodes_template',nodes_test2', iterations,'Matching','kDtree','WorstRejection',0.1);
-        [Rtw3,Ttw3,Etw3] = icp(nodes_template',nodes_test3', iterations,'Matching','kDtree','WorstRejection',0.1);
-        [Rtw4,Ttw4,Etw4] = icp(nodes_template',nodes_test4', iterations,'Matching','kDtree','WorstRejection',0.1);
-        Etw = min([Etw1(end),Etw2(end),Etw3(end),Etw4(end)]);
-    else
-        Etw = min([Etw1(end)]);
-    end
-
-    if Etw == Etw1(end)
-        if better_start == 1
-            sflip = [1 0 0; 0 1 0; 0 0 1];
-            aligned_nodes = (Rtw1*(aligned_nodes') + repmat(Ttw1,1,length(aligned_nodes')))';
-            sR_tibia= Rtw1;
-            sT_tibia = Ttw1;
-        else
-            sflip = [1 0 0; 0 1 0; 0 0 1];
-            aligned_nodes = (aligned_nodes' + repmat(Ttw1,1,length(aligned_nodes')))';
-            sR_tibia= Rtw1;
-            sT_tibia = Ttw1;
-        end
-    elseif Etw == Etw2(end)
-        sflip = rotz(90);
-        aligned_nodes = aligned_nodes*rotz(90);
-        aligned_nodes = (Rtw2*(aligned_nodes') + repmat(Ttw2,1,length(aligned_nodes')))';
-        sR_tibia= Rtw2;
-        sT_tibia= Ttw2;
-    elseif Etw == Etw3(end)
-        sflip = rotz(180);
-        aligned_nodes = aligned_nodes*rotz(180);
-        aligned_nodes = (Rtw3*(aligned_nodes') + repmat(Ttw3,1,length(aligned_nodes')))';
-        sR_tibia= Rtw3;
-        sT_tibia= Ttw3;
-    elseif Etw == Etw4(end)
-        sflip = rotz(270);
-        aligned_nodes = aligned_nodes*rotz(270);
-        aligned_nodes = (Rtw4*(aligned_nodes') + repmat(Ttw4,1,length(aligned_nodes')))';
-        sR_tibia= Rtw4;
-        sT_tibia= Ttw4;
-    end
-else
+% if (tibfib_switch == 1 && bone_indx == 13) || (tibfib_switch == 1 && bone_indx == 14)
+%     temp = find(aligned_nodes(:,3) < 150);
+%     nodes_test = [aligned_nodes(temp,1) aligned_nodes(temp,2) aligned_nodes(temp,3)];
+%     x = (-20:4:20)';
+%     y = (-20:4:20)';
+%     [x, y] = meshgrid(x,y);
+%     z = (max(nodes_test(:,3))) .* ones(length(x(:,1)),1);
+%     k = 1;
+%     for n = 1:length(z)
+%         for m = 1:length(z)
+%             plane(k,:) = [x(m,n) y(m,n) z(1)];
+%             k = k + 1;
+%         end
+%     end
+% 
+%     nodes_test1 = [nodes_test(:,1) nodes_test(:,2) nodes_test(:,3);
+%         plane(:,1) plane(:,2) plane(:,3)];
+% 
+%     nodes_test2 = nodes_test1*rotz(90);
+%     nodes_test3 = nodes_test1*rotz(180);
+%     nodes_test4 = nodes_test1*rotz(270);
+% 
+%     [Rtw1,Ttw1,Etw1] = icp(nodes_template',nodes_test1', iterations,'Matching','kDtree','WorstRejection',0.1);
+% 
+%     if better_start == 1
+%         [Rtw2,Ttw2,Etw2] = icp(nodes_template',nodes_test2', iterations,'Matching','kDtree','WorstRejection',0.1);
+%         [Rtw3,Ttw3,Etw3] = icp(nodes_template',nodes_test3', iterations,'Matching','kDtree','WorstRejection',0.1);
+%         [Rtw4,Ttw4,Etw4] = icp(nodes_template',nodes_test4', iterations,'Matching','kDtree','WorstRejection',0.1);
+%         Etw = min([Etw1(end),Etw2(end),Etw3(end),Etw4(end)]);
+%     else
+%         Etw = min([Etw1(end)]);
+%     end
+% 
+%     if Etw == Etw1(end)
+%         if better_start == 1
+%             sflip = [1 0 0; 0 1 0; 0 0 1];
+%             aligned_nodes = (Rtw1*(aligned_nodes') + repmat(Ttw1,1,length(aligned_nodes')))';
+%             sR_tibia= Rtw1;
+%             sT_tibia = Ttw1;
+%         else
+%             sflip = [1 0 0; 0 1 0; 0 0 1];
+%             aligned_nodes = (aligned_nodes' + repmat(Ttw1,1,length(aligned_nodes')))';
+%             sR_tibia= Rtw1;
+%             sT_tibia = Ttw1;
+%         end
+%     elseif Etw == Etw2(end)
+%         sflip = rotz(90);
+%         aligned_nodes = aligned_nodes*rotz(90);
+%         aligned_nodes = (Rtw2*(aligned_nodes') + repmat(Ttw2,1,length(aligned_nodes')))';
+%         sR_tibia= Rtw2;
+%         sT_tibia= Ttw2;
+%     elseif Etw == Etw3(end)
+%         sflip = rotz(180);
+%         aligned_nodes = aligned_nodes*rotz(180);
+%         aligned_nodes = (Rtw3*(aligned_nodes') + repmat(Ttw3,1,length(aligned_nodes')))';
+%         sR_tibia= Rtw3;
+%         sT_tibia= Ttw3;
+%     elseif Etw == Etw4(end)
+%         sflip = rotz(270);
+%         aligned_nodes = aligned_nodes*rotz(270);
+%         aligned_nodes = (Rtw4*(aligned_nodes') + repmat(Ttw4,1,length(aligned_nodes')))';
+%         sR_tibia= Rtw4;
+%         sT_tibia= Ttw4;
+%     end
+% else
     sR_tibia= [];
     sT_tibia= [];
     sflip = [];
-end
+% end
 
 if bone_indx == 14
     sR_fibula = sR_tibia;
@@ -489,3 +404,76 @@ RTs.yellow = [];
 % ylabel('Y')
 % zlabel('Z')
 % axis equal
+
+%% Helper Functions
+    function Rcapped = capRotation(Rstep, Rbase, maxDeg)
+        % Caps the incremental rotation (Rstep) AND the net rotation (Rstep*Rbase)
+        % so their principal angles are <= maxDeg. Returns a proper SO(3) matrix.
+        maxRad = deg2rad(maxDeg);
+
+        Rstep = projectSO3(Rstep);
+        Rbase = projectSO3(Rbase);
+
+        % Cap the step itself
+        [u_step, th_step] = rotAxisAngle_safe(Rstep);
+        if th_step > maxRad
+            Rstep = axangRodrigues(u_step, maxRad);
+            th_step = maxRad;
+        end
+
+        % Cap the net rotation
+        Rnet = projectSO3(Rstep * Rbase);
+        th_net = rotAngle(Rnet);
+
+        if th_net > maxRad
+            if th_step < 1e-12
+                Rcapped = eye(3);
+                return
+            end
+            scale = maxRad / th_net;
+            Rcapped = axangRodrigues(u_step, th_step * scale);
+            Rcapped = projectSO3(Rcapped);
+        else
+            Rcapped = Rstep;
+        end
+    end
+
+    function theta = rotAngle(R)
+        c = (trace(R)-1)/2;
+        c = max(-1,min(1,c));
+        theta = acos(c);
+    end
+
+    function [u,theta] = rotAxisAngle_safe(R)
+        R = projectSO3(R);
+        c = (trace(R)-1)/2;
+        c = max(-1,min(1,c));
+        theta = acos(c);
+
+        if theta < 1e-12
+            u = [1;0;0]; theta = 0; return
+        end
+
+        ux = (R(3,2)-R(2,3))/(2*sin(theta));
+        uy = (R(1,3)-R(3,1))/(2*sin(theta));
+        uz = (R(2,1)-R(1,2))/(2*sin(theta));
+        u = [ux; uy; uz];
+        no = norm(u);
+        if no < 1e-12, u = [1;0;0]; else, u = u/no; end
+    end
+
+    function R = axangRodrigues(u, theta)
+        u = u(:); no = norm(u);
+        if no < 1e-12 || abs(theta) < 1e-15, R = eye(3); return, end
+        u = u/no;
+        ux = [  0   -u(3)  u(2);
+            u(3)    0   -u(1);
+            -u(2)  u(1)    0 ];
+        R = eye(3)*cos(theta) + sin(theta)*ux + (1-cos(theta))*(u*u.');
+    end
+
+    function R = projectSO3(Rin)
+        [U,~,V] = svd(Rin);
+        R = U*diag([1,1,det(U*V')])*V';
+    end
+end

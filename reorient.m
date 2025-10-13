@@ -47,7 +47,7 @@ end
 nodes_coords_final = [nodes_coords_final_i1(:,1) + cm_nodes(1), nodes_coords_final_i1(:,2) + cm_nodes(2), nodes_coords_final_i1(:,3) + cm_nodes(3)];
 
 if side_indx == 1
-    nodes_coords_final = nodes_coords_final.*[1,1,-1]; % Flip back to right if applicable
+    nodes_coords_final = nodes_coords_final.*[-1,1,1]; % Flip back to right if applicable
 end
 
 HAA_final = nodes_coords_final(end-11:end-10,:);
