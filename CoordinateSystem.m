@@ -1,8 +1,9 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, MEARY, TTA, HAA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 vis = 0;
 z_min_xyz = [];
+z_min_xyz_MSA = [];
 
 %% TT CS for Talus
 if bone_indx == 1 && bone_coord >= 2
@@ -25,6 +26,14 @@ if bone_indx == 2
     aligned_nodes_HAA = [aligned_nodes(aligned_nodes(:,2)<0,1) aligned_nodes(aligned_nodes(:,2)<0,2) aligned_nodes(aligned_nodes(:,2)<0,3)];
 else
     aligned_nodes_HAA = aligned_nodes;
+end
+
+%% NC medial half
+if bone_indx == 3
+    nodes_aligned_original = aligned_nodes;
+    aligned_nodes_NC = [aligned_nodes(aligned_nodes(:,1)>10,1) aligned_nodes(aligned_nodes(:,1)>10,2) aligned_nodes(aligned_nodes(:,1)>10,3)];
+else
+    aligned_nodes_NC = aligned_nodes;
 end
 
 %% Split up the bone into nth sections in all three planes
@@ -301,6 +310,33 @@ if vis == 1
     axis equal
 end
 
+% Negative Y nth ROI MEARY
+negative_y_nth = y_min + nth_y;
+
+negative_y_nth_ROI = (aligned_nodes(:,2) <= negative_y_nth) & (aligned_nodes(:,3) >= 0);
+
+negative_y_nth_x = nonzeros(aligned_nodes(:,1).*negative_y_nth_ROI);
+negative_y_nth_y = nonzeros(aligned_nodes(:,2).*negative_y_nth_ROI);
+negative_y_nth_z = nonzeros(aligned_nodes(:,3).*negative_y_nth_ROI);
+
+av_negative_y_nth_x = mean(negative_y_nth_x);
+av_negative_y_nth_y = mean(negative_y_nth_y);
+av_negative_y_nth_z = mean(negative_y_nth_z);
+
+av_negative_y_nth_MLCR = [av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
+    hold on
+    plot3(negative_y_nth_x,negative_y_nth_y,negative_y_nth_z,'ys')
+    plot3(av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
 %% Just for HAA 
 % Positive Y Nth ROI HAA
 y_min_HAA = min(aligned_nodes_HAA(:,2));
@@ -356,6 +392,100 @@ if vis == 1
     hold on
     plot3(negative_y_nth_x,negative_y_nth_y,negative_y_nth_z,'ys')
     plot3(av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+%% Just NC Overlap
+z_min_NC = min(aligned_nodes(:,3));
+z_max_NC = max(aligned_nodes(:,3));
+range_z_NC = z_max_NC - z_min_NC;
+
+nth_z = range_z_NC/10;
+
+% Positive Z nth ROI
+positive_z_nth = z_max - nth_z;
+
+positive_z_nth_ROI = aligned_nodes(:,3) >= positive_z_nth;
+
+positive_z_nth_x = nonzeros(aligned_nodes(:,1).*positive_z_nth_ROI);
+positive_z_nth_y = nonzeros(aligned_nodes(:,2).*positive_z_nth_ROI);
+positive_z_nth_z = nonzeros(aligned_nodes(:,3).*positive_z_nth_ROI);
+
+av_positive_z_nth_x = mean(positive_z_nth_x);
+av_positive_z_nth_y = mean(positive_z_nth_y);
+av_positive_z_nth_z = mean(positive_z_nth_z);
+
+av_positive_z_nth_NC = [av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
+    hold on
+    plot3(positive_z_nth_x,positive_z_nth_y,positive_z_nth_z,'gs')
+    plot3(av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+% Negative Z nth ROI
+negative_z_nth = z_min + nth_z;
+
+negative_z_nth_ROI = aligned_nodes(:,3) <= negative_z_nth;
+
+negative_z_nth_x = nonzeros(aligned_nodes(:,1).*negative_z_nth_ROI);
+negative_z_nth_y = nonzeros(aligned_nodes(:,2).*negative_z_nth_ROI);
+negative_z_nth_z = nonzeros(aligned_nodes(:,3).*negative_z_nth_ROI);
+
+av_negative_z_nth_x = mean(negative_z_nth_x);
+av_negative_z_nth_y = mean(negative_z_nth_y);
+av_negative_z_nth_z = mean(negative_z_nth_z);
+
+av_negative_z_nth_NC = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z];
+
+if vis == 1
+figure()
+plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
+hold on
+plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'gs')
+plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
+xlabel('X')
+ylabel('Y')
+zlabel('Z')
+axis equal
+end
+
+% Negative Z nth ROI
+z_min_NC = min(aligned_nodes_NC(:,3));
+z_max_NC = max(aligned_nodes_NC(:,3));
+range_z_NC = z_max_NC - z_min_NC;
+
+nth_z = range_z_NC/10;
+
+negative_z_nth = z_min_NC + nth_z;
+
+negative_z_nth_ROI = aligned_nodes_NC(:,3) <= negative_z_nth;
+
+negative_z_nth_x = nonzeros(aligned_nodes_NC(:,1).*negative_z_nth_ROI);
+negative_z_nth_y = nonzeros(aligned_nodes_NC(:,2).*negative_z_nth_ROI);
+negative_z_nth_z = nonzeros(aligned_nodes_NC(:,3).*negative_z_nth_ROI);
+
+av_negative_z_nth_x = mean(negative_z_nth_x);
+av_negative_z_nth_y = mean(negative_z_nth_y);
+av_negative_z_nth_z = mean(negative_z_nth_z);
+
+av_negative_z_nth_NC_nav = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_NC(:,1),aligned_nodes_NC(:,2),aligned_nodes_NC(:,3),'k.')
+    hold on
+    plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'gs')
+    plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
     xlabel('X')
     ylabel('Y')
     zlabel('Z')
@@ -570,8 +700,22 @@ end
 
 if bone_indx == 2
     HAA = [av_negative_y_nth_HAA; av_positive_y_nth_HAA];
+    MLCR = av_negative_y_nth_MLCR;
 else
     HAA = [0,0,0; 0,0,0];
+    MLCR = [0,0,0];
+end
+
+if bone_indx == 4
+    NC_cub = [av_positive_z_nth_NC; av_negative_z_nth_NC];
+else
+    NC_cub = [0,0,0; 0,0,0];
+end
+
+if bone_indx == 3
+    NC_nav = av_negative_z_nth_NC_nav;
+else
+    NC_nav = [0,0,0];
 end
 
 origin = [0,0,0];
@@ -656,6 +800,7 @@ if bone_indx == 8
     z_min_met1 = min(anterior_y_nth_z);
     z_point_index = find(aligned_nodes(:,3) == z_min_met1);
     z_min_xyz = aligned_nodes(z_point_index,:);
+    z_min_xyz_MSA = [0,0,0];
 elseif bone_indx == 12
     anterior_y_nth = y_max - range_y/2;
     anterior_y_nth_ROI = aligned_nodes(:,2) >= anterior_y_nth;
@@ -663,6 +808,13 @@ elseif bone_indx == 12
     z_min_met5 = min(anterior_y_nth_z);
     z_point_index = find(aligned_nodes(:,3) == z_min_met5);
     z_min_xyz = aligned_nodes(z_point_index,:);
+
+    posterior_y_nth = y_min + range_y/2;
+    posterior_y_nth_ROI = aligned_nodes(:,2) <= posterior_y_nth;
+    posterior_y_nth_z = nonzeros(aligned_nodes(:,3).*posterior_y_nth_ROI);
+    z_min_met5 = min(posterior_y_nth_z);
+    z_point_index = find(aligned_nodes(:,3) == z_min_met5);
+    z_min_xyz_MSA = aligned_nodes(z_point_index,:);
 elseif bone_indx == 2 && bone_coord == 1
     posterior_y_nth = y_min + range_y/2;
     posterior_y_nth_ROI = aligned_nodes(:,2) <= posterior_y_nth;
@@ -670,6 +822,7 @@ elseif bone_indx == 2 && bone_coord == 1
     z_min_calc = min(posterior_y_nth_z);
     z_point_index = find(aligned_nodes(:,3) == z_min_calc);
     z_min_xyz = aligned_nodes(z_point_index,:);
+    z_min_xyz_MSA = [0,0,0];
 
     % figure()
     % plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
@@ -684,5 +837,8 @@ elseif bone_indx == 2 && bone_coord == 1
 else
     if isempty(z_min_xyz)
         z_min_xyz = [0,0,0];
+    end
+    if isempty(z_min_xyz_MSA)
+        z_min_xyz_MSA = [0,0,0];
     end
 end
