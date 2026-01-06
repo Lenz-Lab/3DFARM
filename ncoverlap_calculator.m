@@ -8,6 +8,11 @@ AC = pdist(ac,'euclidean');
 
 overlap = AC/AB * 100;
 
+if C(:,3) > A(:,3)
+    overlap = -overlap;
+end
+
+
 figure('Color','w'); hold on
 p1 = patch('Faces',bonestl_transformed.Navicular.ConnectivityList,'Vertices',bonestl_transformed.Navicular.Points,...
     'FaceColor',[0.85 0.85 0.85], 'EdgeColor','none','FaceLighting','gouraud','AmbientStrength',0.15);

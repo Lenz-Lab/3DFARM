@@ -496,9 +496,17 @@ for col = 1:width(data)
 
     range = strcat('A',string(length(A)+1),':B100');
 
-    xlfilename = strcat(folder_path,'Radiograph_Measurements_', FolderName, '.xlsx');
-    writematrix(A,xlfilename,'Sheet',ind_name);
-    writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
-    blankCells = repmat("", length(A)+2, 2);
-    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', range);
+    for try_index = 1:5
+        try
+            xlfilename = strcat(folder_path,'Radiograph_Measurements_', FolderName, '.xlsx');
+            writematrix(A,xlfilename,'Sheet',ind_name);
+            writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
+            blankCells = repmat("", length(A)+2, 2);
+            writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', range);
+            try_index = 5;
+        catch
+            disp("Error attempting to write to Excel file, reattempting...")
+            continue
+        end
+    end
 end

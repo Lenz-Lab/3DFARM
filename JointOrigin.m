@@ -129,12 +129,12 @@ vert3 = Temp_Nodes(conlist(:,3),:);
 %% Move the ACS to the desired joint using TriangleRayIntersection
 
 if AOI ~= "None"
-    [intersect,~,~,~,joint_origin] = TriangleRayIntersection(current_origin, axis_direction, vert1, vert2, vert3,'lineType','line');
+    [intersect,~,~,~,joint_origin] = intersection(current_origin, axis_direction, vert1, vert2, vert3);
     joint_origin = joint_origin(intersect,:);
 
     if (AOI == "CheckSI" || AOI == "CheckML") && isempty(joint_origin)
         joint_origin = [];
-        [intersect,~,~,~,joint_origin] = TriangleRayIntersection(current_origin, -axis_direction, vert1, vert2, vert3,'lineType','line');
+        [intersect,~,~,~,joint_origin] = intersection(current_origin, -axis_direction, vert1, vert2, vert3);
         joint_origin = joint_origin(intersect,:);
     end
 
@@ -154,21 +154,21 @@ else
     joint_origin = current_origin;
 end
 %% Plotting
-% figure()
-% plot3(Temp_Nodes(:,1),Temp_Nodes(:,2),Temp_Nodes(:,3),'.k')
-% hold on
-% plot3(current_origin(:,1),current_origin(:,2),current_origin(:,3),'.g','MarkerSize',25)
-% plot3(joint_origin(:,1),joint_origin(:,2),joint_origin(:,3),'.r','MarkerSize',25)
-% % plot3(Temp_Coordinates_test(1:2,1),Temp_Coordinates_test(1:2,2),Temp_Coordinates_test(1:2,3),'r')
-% % plot3(Temp_Coordinates_test(3:4,1),Temp_Coordinates_test(3:4,2),Temp_Coordinates_test(3:4,3),'g')
-% % plot3(Temp_Coordinates_test(5:6,1),Temp_Coordinates_test(5:6,2),Temp_Coordinates_test(5:6,3),'b')
-% plot3(Temp_Coordinates(1:2,1),Temp_Coordinates(1:2,2),Temp_Coordinates(1:2,3),'r')
-% plot3(Temp_Coordinates(3:4,1),Temp_Coordinates(3:4,2),Temp_Coordinates(3:4,3),'g')
-% plot3(Temp_Coordinates(5:6,1),Temp_Coordinates(5:6,2),Temp_Coordinates(5:6,3),'b')
-% % plot3(Temp_Coordinates_Unit(1:2,1),Temp_Coordinates_Unit(1:2,2),Temp_Coordinates_Unit(1:2,3),'m')
-% % plot3(Temp_Coordinates_Unit(3:4,1),Temp_Coordinates_Unit(3:4,2),Temp_Coordinates_Unit(3:4,3),'m')
-% % plot3(Temp_Coordinates_Unit(5:6,1),Temp_Coordinates_Unit(5:6,2),Temp_Coordinates_Unit(5:6,3),'m')
-% axis equal
+figure()
+plot3(Temp_Nodes(:,1),Temp_Nodes(:,2),Temp_Nodes(:,3),'.k')
+hold on
+plot3(current_origin(:,1),current_origin(:,2),current_origin(:,3),'.g','MarkerSize',25)
+plot3(joint_origin(:,1),joint_origin(:,2),joint_origin(:,3),'.r','MarkerSize',25)
+% plot3(Temp_Coordinates_test(1:2,1),Temp_Coordinates_test(1:2,2),Temp_Coordinates_test(1:2,3),'r')
+% plot3(Temp_Coordinates_test(3:4,1),Temp_Coordinates_test(3:4,2),Temp_Coordinates_test(3:4,3),'g')
+% plot3(Temp_Coordinates_test(5:6,1),Temp_Coordinates_test(5:6,2),Temp_Coordinates_test(5:6,3),'b')
+plot3(Temp_Coordinates(1:2,1),Temp_Coordinates(1:2,2),Temp_Coordinates(1:2,3),'r')
+plot3(Temp_Coordinates(3:4,1),Temp_Coordinates(3:4,2),Temp_Coordinates(3:4,3),'g')
+plot3(Temp_Coordinates(5:6,1),Temp_Coordinates(5:6,2),Temp_Coordinates(5:6,3),'b')
+% plot3(Temp_Coordinates_Unit(1:2,1),Temp_Coordinates_Unit(1:2,2),Temp_Coordinates_Unit(1:2,3),'m')
+% plot3(Temp_Coordinates_Unit(3:4,1),Temp_Coordinates_Unit(3:4,2),Temp_Coordinates_Unit(3:4,3),'m')
+% plot3(Temp_Coordinates_Unit(5:6,1),Temp_Coordinates_Unit(5:6,2),Temp_Coordinates_Unit(5:6,3),'m')
+axis equal
 
 
 

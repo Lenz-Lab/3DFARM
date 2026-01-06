@@ -71,7 +71,7 @@ for i = 1:numel(boneNames)
 end
 
 % ----- Saltzman view for specific bones -----
-saltzTargets = {'Talus','Calcaneus','Tibia'};
+saltzTargets = boneNames;
 for i = 1:numel(boneNames)
     boneName = boneNames{i};
 
