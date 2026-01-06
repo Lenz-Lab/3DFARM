@@ -262,7 +262,7 @@ for col = 1:width(data)
 
     %% AAFACT calculations
     for j = 1:length(all_bone_indx)
-        if ismember(all_bone_indx(j), [1, 2, 3, 8, 9, 12, 13])
+        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             TR_bone = bonestl.(AAFACT_bone);
             bone_indx = all_bone_indx(j);
@@ -442,6 +442,24 @@ for col = 1:width(data)
         angles.TibCAx = NaN;
     end
 
+    if ismember(8,all_bone_indx) && ismember(12,all_bone_indx) % Metatarsal Stacking Angle
+        angles.MSA = angle_calculator(out_rotated.Metatarsal5(8,:), out_rotated.Metatarsal5(7,:), out_rotated.Metatarsal5(8,:), out_rotated.Metatarsal1(7,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal5, "yz", side_indx, YZ_viewer);
+    else
+        angles.MSA = NaN;
+    end
+
+    if ismember(8,all_bone_indx) && ismember(12,all_bone_indx) && ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Medial-Lateral Column Ratio
+        angles.MLCR = mlcr_calculator(out_rotated.Metatarsal1(7,:), out_rotated.Talus(13,:), out_rotated.Metatarsal5(7,:), out_rotated.Calcaneus(10,:), bonestl_transformed, side_indx);
+    else
+        angles.MLCR = NaN;
+    end
+
+    if ismember(3,all_bone_indx) && ismember(4,all_bone_indx) % Naviculocuboid Overlap
+        angles.NCO = ncoverlap_calculator(out_rotated.Cuboid(7,:), out_rotated.Cuboid(8,:), out_rotated.Navicular(7,:), bonestl_transformed, side_indx);
+    else
+        angles.NCO = NaN;
+    end
+
     %% Save Angles
     A = [
         "Talocalcaneal Angle (Sagittal)",
@@ -461,7 +479,10 @@ for col = 1:width(data)
         "Intermetatarsal 1-2",
         "Calcaneal 1st Metatarsal Angle",
         "Tibiocalcaneal Angle (Sagittal)",
-        "Tibiocalcaneal Angle (Axial)"
+        "Tibiocalcaneal Angle (Axial)",
+        "Metatarsal Stacking Angle",
+        "Medial-Lateral Column Ratio",
+        "Naviculocuboid Overlap"
         ];
 
     if length(ind_name) > 31
@@ -473,9 +494,19 @@ for col = 1:width(data)
         values(i,1) = getfield(angles,fields{i});
     end
 
-    xlfilename = strcat(folder_path,'Radiograph_Measurements_', FolderName, '.xlsx');
-    writematrix(A,xlfilename,'Sheet',ind_name);
-    writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
-    blankCells = repmat("", 20, 2); % 2 columns; adjust as needed
-    writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', 'A19:B38');
+    range = strcat('A',string(length(A)+1),':B100');
+
+    for try_index = 1:5
+        try
+            xlfilename = strcat(folder_path,'Radiograph_Measurements_', FolderName, '.xlsx');
+            writematrix(A,xlfilename,'Sheet',ind_name);
+            writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
+            blankCells = repmat("", length(A)+2, 2);
+            writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', range);
+            try_index = 5;
+        catch
+            disp("Error attempting to write to Excel file, reattempting...")
+            continue
+        end
+    end
 end

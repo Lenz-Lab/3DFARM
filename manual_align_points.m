@@ -33,7 +33,8 @@ title(ax1,'Rotate freely. Highlighted points are +Y (YELLOW). Which direction is
 legend(ax1,{'Other points','+Y hemisphere'},'Location','northeastoutside');
 
 choices = {'Anterior','Posterior','Medial','Lateral','Superior','Inferior'};
-dirY = ask_dir_menu('Which anatomical direction does the YELLOW (+Y) hemisphere point toward?', choices);
+dirY = ask_dir_menu('Which anatomical direction does the YELLOW hemisphere point toward?', choices);
+% dirY = 'Posterior'; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [axY, sY] = dir_to_target(dirY);
 
 if ishghandle(fig1), close(fig1); end
@@ -54,7 +55,8 @@ xlabel(ax2,'X'); ylabel(ax2,'Y'); zlabel(ax2,'Z');
 title(ax2,'Rotate freely. Highlighted points are +Z (RED). Which direction is that?');
 legend(ax2,{'Other points','+Z hemisphere'},'Location','northeastoutside');
 
-dirZ = ask_dir_menu('Which anatomical direction does the RED (+Z) hemisphere point toward?', choices);
+dirZ = ask_dir_menu('Which anatomical direction does the RED hemisphere point toward?', choices);
+% dirZ = 'Superior'; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [axZ, sZ] = dir_to_target(dirZ);
 
 if ishghandle(fig2), close(fig2); end

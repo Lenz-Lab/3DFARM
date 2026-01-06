@@ -1,11 +1,11 @@
-function [nodes_final, coords_final, coords_final_unit, Temp_Coordinates_Unit, HAA_final, TTA_final, talus_coords_FAO, z_min_xyz_final, MEARY_final, MDTA_final, TLSA_final] = reorient(Temp_Nodes_Coords,cm_nodes,side_indx,RTs)
+function [nodes_final, coords_final, coords_final_unit, Temp_Coordinates_Unit, NC_nav_final, NC_cub_final, MLCR_final, HAA_final, TTA_final, talus_coords_FAO, z_min_xyz_final, z_min_xyz_MSA_final, MEARY_final, MDTA_final, TLSA_final] = reorient(Temp_Nodes_Coords,cm_nodes,side_indx,RTs)
 % The function reorients the aligned bone and subsequent coordinate system
 % back to the bones original orientation.
 % It requires the nodes and coordinate systems, as well as the rotation and
 % translation matricies.
 
-Temp_Coordinates_origin = Temp_Nodes_Coords(end-17,:); % same as **
-Temp_Coordinates_temp = Temp_Nodes_Coords(end-17:end-12,:) - Temp_Coordinates_origin; %% second end should be same as ^^ below and then add 5 for the first end **
+Temp_Coordinates_origin = Temp_Nodes_Coords(end-22,:); % same as **
+Temp_Coordinates_temp = Temp_Nodes_Coords(end-22:end-17,:) - Temp_Coordinates_origin; %% second end should be same as ^^ below and then add 5 for the first end **
 Temp_Coordinates_temp = [0 0 0; Temp_Coordinates_temp(2,:)./norm(Temp_Coordinates_temp(2,:));
     0 0 0; Temp_Coordinates_temp(4,:)./norm(Temp_Coordinates_temp(4,:));
     0 0 0; Temp_Coordinates_temp(6,:)./norm(Temp_Coordinates_temp(6,:));];
@@ -50,15 +50,19 @@ if side_indx == 1
     nodes_coords_final = nodes_coords_final.*[-1,1,1]; % Flip back to right if applicable
 end
 
-HAA_final = nodes_coords_final(end-11:end-10,:);
-TTA_final = nodes_coords_final(end-9:end-8,:);
-talus_coords_FAO = nodes_coords_final(end-7,:);
-z_min_xyz_final = nodes_coords_final(end-6,:);
+NC_nav_final = nodes_coords_final(end-16,:);
+NC_cub_final = nodes_coords_final(end-15:end-14,:);
+MLCR_final = nodes_coords_final(end-13,:);
+HAA_final = nodes_coords_final(end-12:end-11,:);
+TTA_final = nodes_coords_final(end-10:end-9,:);
+talus_coords_FAO = nodes_coords_final(end-8,:);
+z_min_xyz_final = nodes_coords_final(end-7,:);
+z_min_xyz_MSA_final = nodes_coords_final(end-6,:);
 MEARY_final = nodes_coords_final(end-5:end-4,:);
 MDTA_final = nodes_coords_final(end-3:end-2,:);
 TLSA_final = nodes_coords_final(end-1:end,:);
 
-nodes_coords_final = nodes_coords_final(1:end-12,:); % add 1 to largest 'final' ^^
+nodes_coords_final = nodes_coords_final(1:end-17,:); % add 1 to largest 'final' ^^
 
 coods_final_origin = nodes_coords_final(end-1,:);
 coords_final_temp = nodes_coords_final(end-5:end,:) - coods_final_origin;
