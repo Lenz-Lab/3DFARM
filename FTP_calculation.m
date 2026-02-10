@@ -1,5 +1,5 @@
-function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, bone4, plane, talus_point, z_min_coords, viewer, side_indx)
-% FAO_calculation computes the foot and ankle offset based on given geometries.
+function FTP = FTP_calculation(startA, endA, startB, endB, bone1, bone2, bone3, bone4, plane, talus_point, z_min_coords, viewer, side_indx)
+% FTP_calculation computes the foot and ankle offset based on given geometries.
 % Inputs:
 % - startA, endA: Vectors defining the first reference direction.
 % - startB, endB: Vectors defining the second reference direction.
@@ -8,7 +8,7 @@ function FAO = FAO_calculation(startA, endA, startB, endB, bone1, bone2, bone3, 
 % - talus_point: Coordinates of the talus point.
 % - z_min_coords: Coordinates of the minimum z-plane triangle.
 % Output:
-% - FAO: Calculated foot and ankle offset.
+% - FTP: Calculated foot and ankle offset.
 % Validate plane input and set the view
 if plane == "xy"
     % viewv = [0 90];
@@ -138,6 +138,6 @@ if intersection_point(1) < intersection_on_bisecting_line(1) && side_indx == 2 %
     talus_distance = talus_distance * -1;
 end
 foot_distance = sqrt((end_C(1) - startA(1))^2 + (end_C(2) - startA(2))^2 + (end_C(3) - startA(3))^2);
-% Compute FAO
-FAO = (talus_distance / foot_distance)*100;
+% Compute FTP
+FTP = (talus_distance / foot_distance)*100;
 end

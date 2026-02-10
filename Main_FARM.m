@@ -411,11 +411,11 @@ for col = 1:width(data)
         angles.TNA = NaN;
     end
     
-    if ismember(2,all_bone_indx) && ismember(8,all_bone_indx) && ismember(12,all_bone_indx) % FAO
+    if ismember(2,all_bone_indx) && ismember(8,all_bone_indx) && ismember(12,all_bone_indx) % Foot Type Percentage
         z_min_coords = [out_rotated.Calcaneus(7,:); out_rotated.Metatarsal1(7,:); out_rotated.Metatarsal5(7,:)]; % columns correspond to x y z values of most inferior points
-        angles.FAO = FAO_calculation(out_rotated.Calcaneus(7,:), out_rotated.Metatarsal1(7,:), out_rotated.Calcaneus(7,:), out_rotated.Metatarsal5(7,:), bonestl_transformed.Calcaneus, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal5, bonestl_transformed.Talus, "xy", out_rotated.Talus(15,:), z_min_coords, XY_viewer, side_indx);
+        angles.FTP = FTP_calculation(out_rotated.Calcaneus(7,:), out_rotated.Metatarsal1(7,:), out_rotated.Calcaneus(7,:), out_rotated.Metatarsal5(7,:), bonestl_transformed.Calcaneus, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal5, bonestl_transformed.Talus, "xy", out_rotated.Talus(15,:), z_min_coords, XY_viewer, side_indx);
     else
-        angles.FAO = NaN;
+        angles.FTP = NaN;
     end
 
     if ismember (8,all_bone_indx) && ismember(9,all_bone_indx) % 1-2 Intermetatarsal
@@ -475,7 +475,7 @@ for col = 1:width(data)
         "Meary's Angle (Axial)",
         "Meary's Angle (Sagittal)",
         "Talonavicular Angle",
-        "Foot and Ankle Offset (%)",
+        "Foot Type Percentage (%)",
         "Intermetatarsal 1-2",
         "Calcaneal 1st Metatarsal Angle",
         "Tibiocalcaneal Angle (Sagittal)",
