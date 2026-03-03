@@ -6,6 +6,8 @@ Use this toolbox to automatically calculate 2D radiographic measurements using 3
 
 This code takes a bone model as an input (tibia, fibula, talus, calcaneus, navicular, cuboid, three cuneiforms, and the five metatarsals) and automatically calculates selected 2D radiographic measurements. The input file type currently supported is ".k", ".stl", ".particles", ".vtk", ".ply" and the output is an interactive figure displaying the ACS and an .xlsx file with all selected measurments.
 
+![Figure_AllMeasurements](https://github.com/user-attachments/assets/b8b2772b-51b1-46f4-99ec-8bab39b3f333)
+
 ## Getting Started
 
 ### Dependencies
