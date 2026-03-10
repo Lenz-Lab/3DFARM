@@ -20,6 +20,7 @@ else
     r.ry = roty(90);
     r.ryyy = roty(270);
     r.rz = rotz(90);
+    r.rzz = rotz(180);
     r.rzzz = rotz(270);
     r.rxxxy = rotx(270) * roty(90);
     r.rxxxyyy = rotx(270) * roty(270);

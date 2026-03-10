@@ -35,7 +35,7 @@ else
     selected_sheet = sheets{1};
 end
 
-choice = questdlg('Are you troublshooting alignment?', ...
+choice = questdlg('Are you troubleshooting alignment?', ...
     'Troubleshoot?', 'Yes', 'No', 'No');
 trouble = strcmp(choice,'Yes');
 
