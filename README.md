@@ -4,7 +4,7 @@ Use this toolbox to automatically calculate 2D radiographic measurements using 3
 
 ## Description
 
-This code takes a bone model as an input (tibia, fibula, talus, calcaneus, navicular, cuboid, three cuneiforms, and the five metatarsals) and automatically calculates selected 2D radiographic measurements. The input file type currently supported is ".k", ".stl", ".particles", ".vtk", ".ply" and the output is an interactive figure displaying the ACS and an .xlsx file with all selected measurments.
+This code takes a bone model as an input (tibia, fibula, talus, calcaneus, navicular, cuboid, three cuneiforms, and the five metatarsals) and automatically calculates selected 2D radiographic measurements. The input file type currently supported is ".k", ".stl", ".particles", ".vtk", and ".ply"; and the output is an interactive figure displaying the ACS and an .xlsx file with all selected measurements.
 
 ![Figure_AllMeasurements](https://github.com/user-attachments/assets/b8b2772b-51b1-46f4-99ec-8bab39b3f333)
 
@@ -25,7 +25,6 @@ If you want to run it in MATLAB:
 * Select the folder where the bone models are located
 * It is recommended to have the bone name and laterality in each file name, but it isn't necessary
 * If the file name does not contain the name of the bone and/or the laterally, you will need to manually select both of those for each bone
-* You will also be prompted to input which joint measurements you want calculated and the cooresponding bones needed
 
 ## Authors
 
@@ -41,3 +40,6 @@ If you want to run it in MATLAB:
 This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives (CC BY-NC-ND).
 
 ## Acknowledgments
+
+Funding for this project was provided by the NIH (K01 AR080221).
+
