@@ -22,7 +22,7 @@ If you want to run it in MATLAB:
 If you want to run it in MATLAB:
 * Pull the main repository
 * Execute the Matlab script 'Main_FARM.m'
-* Select the folder where the bone models are located
+* Select the excel file with your desired bones (see Demo_Data/FARM_Example.xlsx)
 * It is recommended to have the bone name and laterality in each file name, but it isn't necessary
 * If the file name does not contain the name of the bone and/or the laterally, you will need to manually select both of those for each bone
 
