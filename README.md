@@ -32,7 +32,7 @@ If you want to run it in MATLAB:
 
 ## Version History
 
-* 0.1
+* 1.0
     * Initial Release
 
 ## License
