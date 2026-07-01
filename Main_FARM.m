@@ -262,7 +262,7 @@ for col = 1:width(data)
 
     %% AAFACT calculations
     for j = 1:length(all_bone_indx)
-        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13])
+        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13, 14])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             TR_bone = bonestl.(AAFACT_bone);
             bone_indx = all_bone_indx(j);
@@ -460,6 +460,112 @@ for col = 1:width(data)
         angles.NCO = NaN;
     end
 
+    % VICON Measurements
+    if ismember(2,all_bone_indx) % VarValAngle
+        diffe = abs(out_tibiarotated.Calcaneus(4,:) - out_tibiarotated.Calcaneus(3,:));
+        [~, maxIndex] = max(diffe);
+
+        if maxIndex == 3
+            SI_global = [out_tibiarotated.Calcaneus(3,1), out_tibiarotated.Calcaneus(3,2), out_tibiarotated.Calcaneus(4,3)];
+        elseif maxIndex == 1
+            SI_global = [out_tibiarotated.Calcaneus(4,1), out_tibiarotated.Calcaneus(3,2), out_tibiarotated.Calcaneus(3,3)];
+        elseif maxIndex == 2
+            SI_global = [out_tibiarotated.Calcaneus(3,1), out_tibiarotated.Calcaneus(4,2), out_tibiarotated.Calcaneus(3,3)];
+        end
+
+        angles.VVA = angle_calculator(out_tibiarotated.Calcaneus(3,:), SI_global, out_tibiarotated.Calcaneus(7,:), out_tibiarotated.Talus(15,:), bonestl_tibiatransformed.Calcaneus, bonestl_tibiatransformed.Calcaneus, "xz", side_indx, XZ_viewer);
+    else
+        angles.VVA = NaN;
+    end
+
+    if ismember(2,all_bone_indx) % Calcaneal Pitch
+        angles.CP = angles.CIA;
+    else
+        angles.CP = NaN;
+    end
+
+    if ismember(8,all_bone_indx) % 1stRayPitch
+        diffe = abs(out_rotated.Metatarsal1(2,:) - out_rotated.Metatarsal1(1,:));
+        [~, maxIndex] = max(diffe);
+
+        if maxIndex == 2
+            AP_global = [out_rotated.Metatarsal1(1,1), out_rotated.Metatarsal1(2,2), out_rotated.Metatarsal1(1,3)];
+        elseif maxIndex == 1
+            AP_global = [out_rotated.Metatarsal1(2,1), out_rotated.Metatarsal1(1,2), out_rotated.Metatarsal1(1,3)];
+        elseif maxIndex == 3
+            AP_global = [out_rotated.Metatarsal1(1,1), out_rotated.Metatarsal1(1,2), out_rotated.Metatarsal1(2,3)];
+        end
+
+        angles.M1P = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Metatarsal1(1,:), AP_global, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "yz", side_indx, YZ_viewer);
+    else
+        angles.M1P = NaN;
+    end
+
+    % Combine
+    P_tibiafibula = [bonestl_transformed.Tibia.Points; bonestl_transformed.Fibula.Points];
+    C_tibiafibula = [bonestl_transformed.Tibia.ConnectivityList; bonestl_transformed.Fibula.ConnectivityList + size(bonestl_transformed.Tibia.Points, 1)];
+
+    % Store as one triangulation
+    bonestl_transformed.TibiaFibula = triangulation(C_tibiafibula, P_tibiafibula);
+
+    if ismember(13,all_bone_indx) && ismember(14,all_bone_indx)
+        P_tib = out_rotated.Tibia(11,:);
+        P_fib = out_rotated.Fibula(7,:);
+        bimal_mid = (P_tib + P_fib) ./ 2;
+        % bimal_vec = P_fib - P_tib;
+
+        P_tib_moved = [P_tib(:,1), P_tib(:,2), 0];
+        P_fib_moved = [P_fib(:,1), P_fib(:,2), 0];
+
+        bimal_vec_moved = P_fib_moved - P_tib_moved;
+        % bimal_mid_moved = (P_tib_moved + P_fib_moved) ./ 2;
+
+        perp_vec_moved = cross(bimal_vec_moved, [0,0,1]);
+
+        perp_vec = [perp_vec_moved(:,1), perp_vec_moved(:,2), bimal_mid(:,3)];
+
+        % figure()
+        % plot3(bimal_mid_moved(:,1), bimal_mid_moved(:,2), bimal_mid_moved(:,3),'og');
+        % hold on
+        % plot3(P_tib_moved(:,1), P_tib_moved(:,2), P_tib_moved(:,3),'or');
+        % plot3(P_fib_moved(:,1), P_fib_moved(:,2), P_fib_moved(:,3),'ob');
+        % plot3([P_tib_moved(:,1), P_fib_moved(:,1)], [P_tib_moved(:,2), P_fib_moved(:,2)], [P_tib_moved(:,3), P_fib_moved(:,3)], 'k-', 'LineWidth', 2);
+        % plot3([bimal_mid_moved(:,1), perp_vec_moved(:,1)], [bimal_mid_moved(:,2), perp_vec_moved(:,2)], [bimal_mid_moved(:,3), perp_vec_moved(:,3)], 'g-', 'LineWidth', 2);
+        %
+        % plot3(bimal_mid(:,1), bimal_mid(:,2), bimal_mid(:,3),'sg');
+        % plot3(P_tib(:,1), P_tib(:,2), P_tib(:,3),'sr');
+        % plot3(P_fib(:,1), P_fib(:,2), P_fib(:,3),'sb');
+        % plot3([P_tib(:,1), P_fib(:,1)], [P_tib(:,2), P_fib(:,2)], [P_tib(:,3), P_fib(:,3)], 'k-', 'LineWidth', 2);
+        % plot3([bimal_mid(:,1), perp_vec(:,1)], [bimal_mid(:,2), perp_vec(:,2)], [bimal_mid(:,3), perp_vec(:,3)], 'g-', 'LineWidth', 2);
+
+        % HindfootProgression_BiMal
+        angles.HPBM = angle_calculator(bimal_mid, perp_vec, out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer);
+        % hold on
+        % plot3(midpoint(:,1), midpoint(:,2), midpoint(:,3),'.g');
+        % plot3(bonestl_transformed.Fibula.Points(:,1),bonestl_transformed.Fibula.Points(:,2),bonestl_transformed.Fibula.Points(:,3),'.k');
+        % plot3(P_tib(:,1), P_tib(:,2), P_tib(:,3),'or');
+        % plot3(P_fib(:,1), P_fib(:,2), P_fib(:,3),'ob');
+    end
+
+    if ismember(13,all_bone_indx) && ismember(9,all_bone_indx)
+        P_tib = out_rotated.Tibia(11,:);
+        P_fib = out_rotated.Fibula(7,:);
+        bimal_mid = (P_tib + P_fib) ./ 2;
+
+        P_tib_moved = [P_tib(:,1), P_tib(:,2), 0];
+        P_fib_moved = [P_fib(:,1), P_fib(:,2), 0];
+
+        bimal_vec_moved = P_fib_moved - P_tib_moved;
+
+        perp_vec_moved = cross(bimal_vec_moved, [0,0,1]);
+
+        perp_vec = [perp_vec_moved(:,1), perp_vec_moved(:,2), bimal_mid(:,3)];
+
+        % ForefootProgression_BiMal
+        angles.FPBM = angle_calculator(bimal_mid, perp_vec, out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Metatarsal2, "xy", side_indx, XY_viewer);
+    end
+
+
     %% Save Angles
     A = [
         "Talocalcaneal Angle (Sagittal)",
@@ -485,13 +591,25 @@ for col = 1:width(data)
         "Naviculocuboid Overlap"
         ];
 
+    VICON_Names = [
+        "VarValAngle",
+        "Calcaneal Pitch",
+        "HindfootProgression_relBiMal",
+        "1stRayPitch",
+        "ForefootProgression_relBiMal"
+        ];
+
     if length(ind_name) > 31
         ind_name = ind_name(1:31);
     end
 
     fields = fieldnames(angles);
     for i=1:length(fields)
-        values(i,1) = getfield(angles,fields{i});
+        if i < 22
+            values(i,1) = getfield(angles,fields{i});
+        elseif i >= 22
+            vicon_values(i,1) = getfield(angles,fields{i});
+        end
     end
 
     range = strcat('A',string(length(A)+1),':B100');
@@ -505,7 +623,21 @@ for col = 1:width(data)
             writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', range);
             try_index = 5;
         catch
-            disp("Error attempting to write to Excel file, reattempting...")
+            % disp("Error attempting to write to Excel file, reattempting...")
+            continue
+        end
+    end
+
+    for try_index = 1:5
+        try
+            xlfilename = strcat(folder_path,'Vicon_Radiograph_Measurements_', FolderName, '.xlsx');
+            writematrix(VICON_Names,xlfilename,'Sheet',ind_name);
+            writematrix(vicon_values(22:26,:),xlfilename,'Sheet',ind_name,'Range','B1');
+            blankCells = repmat("", length(VICON_Names)+2, 2);
+            writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', range);
+            try_index = 5;
+        catch
+            % disp("Error attempting to write to Excel file, reattempting...")
             continue
         end
     end

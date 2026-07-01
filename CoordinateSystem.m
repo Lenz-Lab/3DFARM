@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, med_mal] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 vis = 0;
@@ -251,6 +251,37 @@ if vis == 1
     ylabel('Y')
     zlabel('Z')
     axis equal
+end
+
+if bone_indx == 13
+    % Positive X nth ROI MDTA Full Nodes
+    nth_x = range_x/10;
+
+    positive_x_nth = x_max - nth_x;
+
+    positive_x_nth_ROI = (nodes_aligned_original(:,1) >= positive_x_nth) & (nodes_aligned_original(:,3) <= 0);
+
+    positive_x_nth_x = nonzeros(nodes_aligned_original(:,1).*positive_x_nth_ROI);
+    positive_x_nth_y = nonzeros(nodes_aligned_original(:,2).*positive_x_nth_ROI);
+    positive_x_nth_z = nonzeros(nodes_aligned_original(:,3).*positive_x_nth_ROI);
+
+    av_positive_x_nth_x = mean(positive_x_nth_x);
+    av_positive_x_nth_y = mean(positive_x_nth_y);
+    av_positive_x_nth_z = mean(positive_x_nth_z);
+
+    av_positive_x_nth_mdta_full = [av_positive_x_nth_x,av_positive_x_nth_y,av_positive_x_nth_z];
+
+    if vis == 1
+        figure()
+        plot3(nodes_aligned_original(:,1),nodes_aligned_original(:,2),nodes_aligned_original(:,3),'k.')
+        hold on
+        plot3(positive_x_nth_x,positive_x_nth_y,positive_x_nth_z,'rs')
+        plot3(av_positive_x_nth_x,av_positive_x_nth_y,av_positive_x_nth_z,'r.','MarkerSize',50)
+        xlabel('X')
+        ylabel('Y')
+        zlabel('Z')
+        axis equal
+    end
 end
 
 %% Just for MEARY 
@@ -678,7 +709,7 @@ else % Cuneiforms, Metatarsals, Calcaneus, Cuboid, Talus
     third_point = av_positive_z_nth;
 end
 
-if bone_indx == 13
+if bone_indx == 13 || bone_indx == 14
     MDTA = [av_negative_x_nth_mdta; av_positive_x_nth_mdta];
     TLSA = [av_negative_y_nth_tlsa; av_positive_y_nth_tlsa];
 else
@@ -716,6 +747,12 @@ if bone_indx == 3
     NC_nav = av_negative_z_nth_NC_nav;
 else
     NC_nav = [0,0,0];
+end
+
+if bone_indx == 13
+    med_mal = av_positive_x_nth_mdta_full;
+else
+    med_mal = [0,0,0];
 end
 
 origin = [0,0,0];
