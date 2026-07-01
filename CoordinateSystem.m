@@ -63,6 +63,8 @@ elseif bone_indx >= 8 && bone_indx <= 12 % Metatarsals
     n = 3;
 elseif bone_indx == 13 || bone_indx == 14 % Tibia or Fibula
     n = 3;
+elseif bone_indx == 15 || bone_indx == 16 % Phalanx
+    n = 3;
 end
 
 %% Just for TTA
@@ -664,7 +666,7 @@ if bone_indx == 3 % Navicular
     first_point = av_positive_x_nth;
     second_point = av_negative_x_nth;
     third_point = av_positive_z_nth;
-elseif bone_indx >= 13 % Tibia, Fibula
+elseif bone_indx == 13 || bone_indx == 14 % Tibia, Fibula
     first_point = av_positive_z_nth;
     second_point = av_negative_z_nth;
     if av_negative_z_nth(3) > av_negative_x_nth(3)

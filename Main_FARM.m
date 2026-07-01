@@ -49,16 +49,16 @@ names = data{1, :};
 % Lists for detemining bone and side
 list_bone = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
     'Lateral_Cuneiform','Metatarsal1','Metatarsal2','Metatarsal3','Metatarsal4','Metatarsal5',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','Proximal_Phalanx1','Proximal_Phalanx2','Medial_Sesamoid','Lateral_Sesamoid'};
 list_bone2 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','First_Metatarsal','Second_Metatarsal','Third_Metatarsal','Fourth_Metatarsal','Fifth_Metatarsal',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','First_Proximal_Phalanx','Second_Proximal_Phalanx','Sesamoid1','Sesamoid2'};
 list_bone3 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
     'Lateral_Cuneiform','Metatarsal_1','Metatarsal_2','Metatarsal_3','Metatarsal_4','Metatarsal_5',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','Proximal_Phalanx_1','Proximal_Phalanx_2','Sesamoid_1','Sesamoid_2'};
 list_bone4 = {'Talus', 'Calc', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','1st_Met','2nd_Met','3rd_Met','4th_Met','5th_Met',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','1st_Proximal_Phalanx','2nd_Proximal_Phalanx','Medial_Sesamoid','Lateral_Sesamoid'};
 list_side_folder = {'Right','_R.','_R_','_R ','_R\','_R','Left','_L.','_L_','_L ','_L\','_L'};
 list_side = {'Right','Left'};
 
@@ -262,7 +262,7 @@ for col = 1:width(data)
 
     %% AAFACT calculations
     for j = 1:length(all_bone_indx)
-        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13])
+        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13, 15, 16])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             TR_bone = bonestl.(AAFACT_bone);
             bone_indx = all_bone_indx(j);
@@ -458,6 +458,26 @@ for col = 1:width(data)
         angles.NCO = ncoverlap_calculator(out_rotated.Cuboid(7,:), out_rotated.Cuboid(8,:), out_rotated.Navicular(7,:), bonestl_transformed, side_indx);
     else
         angles.NCO = NaN;
+    end
+
+    if ismember(15,all_bone_indx) && ismember(8,all_bone_indx) % Hallux Valgus Angle
+        angles.HVA = angle_calculator(out_rotated.Proximal_Phalanx1(1,:), out_rotated.Proximal_Phalanx1(2,:),out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Proximal_Phalanx1, "xy", side_indx, XY_viewer);
+    else
+        angles.HVA = NaN;
+    end
+
+    if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) % Sesamoid Rotation Angle
+        % Combine sesamoids
+        P_sesamoids = [bonestl_transformed.Medial_Sesamoid.Points; bonestl_transformed.Lateral_Sesamoid.Points];
+        C_sesamoids = [bonestl_transformed.Medial_Sesamoid.ConnectivityList; bonestl_transformed.Lateral_Sesamoid.ConnectivityList + size(bonestl_transformed.Medial_Sesamoid.Points, 1)];
+        bonestl_transformed.Sesamoids = triangulation(C_sesamoids, P_sesamoids);
+
+        med_ses_point = [mean(bonestl_transformed.Medial_Sesamoid.Points(:,1)), mean(bonestl_transformed.Medial_Sesamoid.Points(:,2)), mean(bonestl_transformed.Medial_Sesamoid.Points(:,3))];
+        lat_ses_point = [mean(bonestl_transformed.Lateral_Sesamoid.Points(:,1)), mean(bonestl_transformed.Lateral_Sesamoid.Points(:,2)), mean(bonestl_transformed.Lateral_Sesamoid.Points(:,3))];
+
+        angles.SRA = angle_calculator(out_rotated.Metatarsal1(5,:), out_rotated.Metatarsal1(6,:),med_ses_point, lat_ses_point, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
+    else
+        angles.SRA = NaN;
     end
 
     %% Save Angles

@@ -66,6 +66,12 @@ elseif bone_indx == 14 && bone_coord == 1
 elseif bone_indx == 14 && bone_coord == 2
     TR_template = stlread('Fibula_Template_Facet.stl');
     a = 3;
+elseif bone_indx == 15 && bone_coord == 1
+    TR_template = stlread('Proximal_Phalanx1_Template.stl');
+    a = 2;
+elseif bone_indx == 16 && bone_coord == 1
+    TR_template = stlread('Proximal_Phalanx2_Template.stl');
+    a = 2;
 end
 
 nodes_template = TR_template.Points;
