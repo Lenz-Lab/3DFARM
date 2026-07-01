@@ -466,7 +466,7 @@ for col = 1:width(data)
         angles.HVA = NaN;
     end
 
-    if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) % Sesamoid Rotation Angle
+    if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) && ismember(8,all_bone_indx) % Sesamoid Rotation Angle
         % Combine sesamoids
         P_sesamoids = [bonestl_transformed.Medial_Sesamoid.Points; bonestl_transformed.Lateral_Sesamoid.Points];
         C_sesamoids = [bonestl_transformed.Medial_Sesamoid.ConnectivityList; bonestl_transformed.Lateral_Sesamoid.ConnectivityList + size(bonestl_transformed.Medial_Sesamoid.Points, 1)];
@@ -478,6 +478,19 @@ for col = 1:width(data)
         angles.SRA = angle_calculator(out_rotated.Metatarsal1(5,:), out_rotated.Metatarsal1(6,:),med_ses_point, lat_ses_point, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
     else
         angles.SRA = NaN;
+    end
+
+    if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) && ismember(8,all_bone_indx) % Sesamoid Medial-Lateral Displacement
+        midpoint_ses = (med_ses_point + lat_ses_point) ./ 2;
+        [angles.SMLD, ~, ~] = smld_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), midpoint_ses, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+    else
+        angles.SMLD = NaN;
+    end
+
+    if ismember(8,all_bone_indx) % Distal Metatarsal Articular Angle
+        angles.DMAA = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:),out_rotated.Metatarsal1(9,:), out_rotated.Metatarsal1(8,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+    else
+        angles.DMAA
     end
 
     %% Save Angles
@@ -502,7 +515,11 @@ for col = 1:width(data)
         "Tibiocalcaneal Angle (Axial)",
         "Metatarsal Stacking Angle",
         "Medial-Lateral Column Ratio",
-        "Naviculocuboid Overlap"
+        "Naviculocuboid Overlap",
+        "Hallux Valgus Angle",
+        "Sesamoid Rotation Angle",
+        "Sesamoid Medial-Lateral Displacement",
+        "Distal Metatarsal Articular Angle"
         ];
 
     if length(ind_name) > 31

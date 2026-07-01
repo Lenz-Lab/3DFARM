@@ -1,4 +1,4 @@
-function [distXZ, Q, segPts] = vect_distance_calculator(startA, endA, P, bone1, bone2, plane, side_indx, viewer, varargin)
+function [SMLD, Q, segPts] = smld_calculator(startA, endA, P, bone1, bone2, plane, side_indx, varargin)
 
 if nargin > 9 && ~isempty(varargin{1})
     measurement = string(varargin{1});
@@ -6,45 +6,46 @@ else
     measurement = "";
 end
 
-% ------ Math ------
-startA = startA(:).'; endA = endA(:).'; P = P(:).';
-v  = endA - startA;
-Ox = startA(1); Oy = startA(2); Oz = startA(3);
-vx = v(1);     vy = v(2);     vz = v(3);
-Px = P(1);     Py = P(2);     Pz = P(3);
+startA = startA(:).';
+endA   = endA(:).';
+P      = P(:).';
 
-% Sign factor: + if medial, − if lateral
-% Right (1): medial is -X => -1;  Left (2): medial is +X => +1
+v = endA - startA;
+
+Ox = startA(1); Oy = startA(2);
+vx = v(1);      vy = v(2);
+
+Px = P(1);      Py = P(2);      Pz = P(3);
+
+% Sign factor: positive = medial
+% Right foot: medial is usually -X
+% Left foot:  medial is usually +X
 if side_indx == 1
     signFactor = -1;
 else
     signFactor = +1;
 end
 
-if abs(vz) < eps
-    if abs(Pz - Oz) > eps
-        Q = [NaN NaN NaN];
-        distXZ = NaN;                 % signed distance (NaN if unreachable)
-        segPts = [NaN NaN NaN; NaN NaN NaN];
-        warning('Direction has zero Z component and Z does not match P. Cannot reach Z = Pz.');
-    else
-        if abs(vx) < eps
-            Q = startA;
-        else
-            t = (Px - Ox)/vx;
-            Q = startA + t.*v;
-        end
-        dx = Q(1) - Px;               % delta in X at constant Z          // NEW
-        distXZ = signFactor * dx;     % signed by medial/lateral          // NEW
-        segPts = [Px Py Pz; Q(1) Py Pz];
-    end
-else
-    t = (Pz - Oz)/vz;
-    Q = startA + t.*v;
-    dx = Q(1) - Px;                   % delta in X at constant Z          // NEW
-    distXZ = signFactor * dx;         % signed by medial/lateral          // NEW
-    segPts = [Px Py Pz; Q(1) Py Pz];
+% Find point Q on 1st metatarsal centerline at same Y position as sesamoid midpoint
+if abs(vy) < eps
+    Q = [NaN NaN NaN];
+    SMLD = NaN;
+    segPts = [NaN NaN NaN; NaN NaN NaN];
+    warning('Reference line has zero Y component. Cannot evaluate at same Y as P.');
+    return
 end
+
+t = (Py - Oy) / vy;
+Q = startA + t.*v;
+
+% Medial-lateral displacement
+dx = Px - Q(1);
+
+% Signed so positive = medial displacement
+SMLD = signFactor * dx;
+
+% Segment for plotting, shown at constant Y and Z
+segPts = [Q(1) Py Pz; Px Py Pz];
 
 % ------ Plotting ------
 if nargin >= 5 && ~isempty(bone1) && ~isempty(bone2)
@@ -87,9 +88,10 @@ if nargin >= 5 && ~isempty(bone1) && ~isempty(bone2)
     camlight HEADLIGHT; material dull
     axis equal off; box off
 
-    % Title shows signed distance  // CHANGED
-    title_str = sprintf('Signed XZ distance = %.4f', distXZ);
-    if measurement ~= "" , title_str = measurement + "  —  " + title_str; end
-    title(title_str, 'Interpreter','none')
+    % % Title shows signed distance  // CHANGED
+    % title_str = sprintf('Signed XZ distance = %.4f', distXZ);
+    % if measurement ~= "" , title_str = measurement + "  —  " + title_str; end
+    % title(title_str, 'Interpreter','none')
 end
+
 end

@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, DMAA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 vis = 0;
@@ -34,6 +34,19 @@ if bone_indx == 3
     aligned_nodes_NC = [aligned_nodes(aligned_nodes(:,1)>10,1) aligned_nodes(aligned_nodes(:,1)>10,2) aligned_nodes(aligned_nodes(:,1)>10,3)];
 else
     aligned_nodes_NC = aligned_nodes;
+end
+
+%% Metatarsal 1 head
+if bone_indx == 8
+    y_min = min(aligned_nodes(:,2));
+    y_max = max(aligned_nodes(:,2));
+    range_y = y_max - y_min;
+    cutoff = range_y*0.25;
+
+    nodes_aligned_original = aligned_nodes;
+    aligned_nodes_DMAA = [aligned_nodes(aligned_nodes(:,2)>cutoff,1) aligned_nodes(aligned_nodes(:,2)>cutoff,2) aligned_nodes(aligned_nodes(:,2)>cutoff,3)];
+else
+    aligned_nodes_DMAA = aligned_nodes;
 end
 
 %% Split up the bone into nth sections in all three planes
@@ -130,6 +143,67 @@ if vis == 1
     hold on
     plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'ys')
     plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+%% Just for DMAA
+% Positive Y Nth ROI DMAA
+y_min_DMAA = min(aligned_nodes_DMAA(:,2));
+y_max_DMAA = max(aligned_nodes_DMAA(:,2));
+range_y_DMAA = y_max_DMAA - y_min_DMAA;
+
+nth_y = range_y_DMAA/5;
+
+positive_y_nth = y_max_DMAA - nth_y;
+
+positive_y_nth_ROI = (aligned_nodes_DMAA(:,2) >= positive_y_nth);
+
+positive_y_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*positive_y_nth_ROI);
+positive_y_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*positive_y_nth_ROI);
+positive_y_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*positive_y_nth_ROI);
+
+av_positive_y_nth_x = mean(positive_y_nth_x);
+av_positive_y_nth_y = mean(positive_y_nth_y);
+av_positive_y_nth_z = mean(positive_y_nth_z);
+
+av_positive_y_nth_DMAA = [av_positive_y_nth_x,av_positive_y_nth_y,av_positive_y_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
+    hold on
+    plot3(positive_y_nth_x,positive_y_nth_y,positive_y_nth_z,'ys')
+    plot3(av_positive_y_nth_x,av_positive_y_nth_y,av_positive_y_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+% Negative Y nth ROI HAA
+negative_y_nth = y_min_DMAA + nth_y;
+
+negative_y_nth_ROI = (aligned_nodes_DMAA(:,2) <= negative_y_nth);
+
+negative_y_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*negative_y_nth_ROI);
+negative_y_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*negative_y_nth_ROI);
+negative_y_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*negative_y_nth_ROI);
+
+av_negative_y_nth_x = mean(negative_y_nth_x);
+av_negative_y_nth_y = mean(negative_y_nth_y);
+av_negative_y_nth_z = mean(negative_y_nth_z);
+
+av_negative_y_nth_DMAA = [av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
+    hold on
+    plot3(negative_y_nth_x,negative_y_nth_y,negative_y_nth_z,'ys')
+    plot3(av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z,'r.','MarkerSize',50)
     xlabel('X')
     ylabel('Y')
     zlabel('Z')
@@ -718,6 +792,12 @@ if bone_indx == 3
     NC_nav = av_negative_z_nth_NC_nav;
 else
     NC_nav = [0,0,0];
+end
+
+if bone_indx == 8
+    DMAA = [av_positive_y_nth_DMAA; av_negative_y_nth_DMAA];
+else
+    DMAA = [0,0,0; 0,0,0];
 end
 
 origin = [0,0,0];
