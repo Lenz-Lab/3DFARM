@@ -520,7 +520,11 @@ for col = 1:width(data)
         bimal_vec_moved = P_fib_moved - P_tib_moved;
         % bimal_mid_moved = (P_tib_moved + P_fib_moved) ./ 2;
 
+        if side_indx == 1
+        perp_vec_moved = cross(bimal_vec_moved, [0,0,-1]);
+        elseif side_indx == 2
         perp_vec_moved = cross(bimal_vec_moved, [0,0,1]);
+        end
 
         perp_vec = [perp_vec_moved(:,1), perp_vec_moved(:,2), bimal_mid(:,3)];
 
@@ -531,12 +535,14 @@ for col = 1:width(data)
         % plot3(P_fib_moved(:,1), P_fib_moved(:,2), P_fib_moved(:,3),'ob');
         % plot3([P_tib_moved(:,1), P_fib_moved(:,1)], [P_tib_moved(:,2), P_fib_moved(:,2)], [P_tib_moved(:,3), P_fib_moved(:,3)], 'k-', 'LineWidth', 2);
         % plot3([bimal_mid_moved(:,1), perp_vec_moved(:,1)], [bimal_mid_moved(:,2), perp_vec_moved(:,2)], [bimal_mid_moved(:,3), perp_vec_moved(:,3)], 'g-', 'LineWidth', 2);
-        %
+        % 
         % plot3(bimal_mid(:,1), bimal_mid(:,2), bimal_mid(:,3),'sg');
         % plot3(P_tib(:,1), P_tib(:,2), P_tib(:,3),'sr');
         % plot3(P_fib(:,1), P_fib(:,2), P_fib(:,3),'sb');
         % plot3([P_tib(:,1), P_fib(:,1)], [P_tib(:,2), P_fib(:,2)], [P_tib(:,3), P_fib(:,3)], 'k-', 'LineWidth', 2);
         % plot3([bimal_mid(:,1), perp_vec(:,1)], [bimal_mid(:,2), perp_vec(:,2)], [bimal_mid(:,3), perp_vec(:,3)], 'g-', 'LineWidth', 2);
+        % xlabel('x')
+        % ylabel('y')
 
         % HindfootProgression_BiMal
         angles.HPBM = angle_calculator(bimal_mid, perp_vec, out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer);
@@ -557,7 +563,11 @@ for col = 1:width(data)
 
         bimal_vec_moved = P_fib_moved - P_tib_moved;
 
-        perp_vec_moved = cross(bimal_vec_moved, [0,0,1]);
+        if side_indx == 1
+            perp_vec_moved = cross(bimal_vec_moved, [0,0,-1]);
+        elseif side_indx == 2
+            perp_vec_moved = cross(bimal_vec_moved, [0,0,1]);
+        end
 
         perp_vec = [perp_vec_moved(:,1), perp_vec_moved(:,2), bimal_mid(:,3)];
 
@@ -594,8 +604,8 @@ for col = 1:width(data)
     VICON_Names = [
         "VarValAngle",
         "Calcaneal Pitch",
-        "HindfootProgression_relBiMal",
         "1stRayPitch",
+        "HindfootProgression_relBiMal",
         "ForefootProgression_relBiMal"
         ];
 
