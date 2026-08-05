@@ -471,9 +471,32 @@ for col = 1:width(data)
         P_sesamoids = [bonestl_transformed.Medial_Sesamoid.Points; bonestl_transformed.Lateral_Sesamoid.Points];
         C_sesamoids = [bonestl_transformed.Medial_Sesamoid.ConnectivityList; bonestl_transformed.Lateral_Sesamoid.ConnectivityList + size(bonestl_transformed.Medial_Sesamoid.Points, 1)];
         bonestl_transformed.Sesamoids = triangulation(C_sesamoids, P_sesamoids);
+        
+        % First-metatarsal mediolateral axis
+        mt1_start = out_rotated.Metatarsal1(5,:);
+        mt1_end = out_rotated.Metatarsal1(6,:);
 
-        med_ses_point = [mean(bonestl_transformed.Medial_Sesamoid.Points(:,1)), mean(bonestl_transformed.Medial_Sesamoid.Points(:,2)), mean(bonestl_transformed.Medial_Sesamoid.Points(:,3))];
-        lat_ses_point = [mean(bonestl_transformed.Lateral_Sesamoid.Points(:,1)), mean(bonestl_transformed.Lateral_Sesamoid.Points(:,2)), mean(bonestl_transformed.Lateral_Sesamoid.Points(:,3))];
+        % Sesamoid axis: medial to lateral
+        ses_start = med_ses_point;
+        ses_end = lat_ses_point;
+
+        % Build the two vectors
+        v_mt1 = mt1_end - mt1_start;
+        v_ses = ses_end - ses_start;
+
+        % Project vectors onto the XZ plane
+        v_mt1_xz = [v_mt1(1), 0, v_mt1(3)];
+        v_ses_xz = [v_ses(1), 0, v_ses(3)];
+        
+        % Sesamoid mesh centroids
+        med_ses_point = mean(bonestl_transformed.Medial_Sesamoid.Points,1);
+        lat_ses_point = mean(bonestl_transformed.Lateral_Sesamoid.Points,1);
+
+        if dot(v_mt1_xz, v_ses_xz) < 0
+            temp = mt1_start;
+            mt1_start = mt1_end;
+            mt1_end = temp;
+        end
 
         angles.SRA = angle_calculator(out_rotated.Metatarsal1(5,:), out_rotated.Metatarsal1(6,:),med_ses_point, lat_ses_point, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
     else
