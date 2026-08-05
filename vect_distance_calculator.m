@@ -89,7 +89,7 @@ if nargin >= 5 && ~isempty(bone1) && ~isempty(bone2)
 
     % Title shows signed distance  // CHANGED
     title_str = sprintf('Signed XZ distance = %.4f', distXZ);
-    if measurement ~= "" , title_str = measurement + "  —  " + title_str; end
+    if measurement ~= "" , title_str = measurement + "  " + char(8212) + "  " + title_str; end
     title(title_str, 'Interpreter','none')
 end
 end

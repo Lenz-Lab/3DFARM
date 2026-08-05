@@ -61,7 +61,7 @@ camPos = targetPoint + distance * crossVec_norm;
             'LineWidth',2,'MaxHeadSize',0.5,'Color',col);
     end
 % Plot the bones
-figure();
+figure('Color','w');
 hold on;
 plot_bone(bone1);
 plot_bone(bone2);
@@ -73,10 +73,8 @@ camtarget(targetPoint);   % The point the camera looks at
 campos(camPos);           % Position the camera along the cross product direction
 camlight HEADLIGHT;
 material dull;
-axis equal;
-xlabel('x');
-ylabel('y');
-zlabel('z');
+axis equal off;
+xlabel('x'); ylabel('y'); zlabel('z'); set(gca,'XTick',[],'YTick',[],'ZTick',[])
 % Plot the original talus point
 plot3(talus_point(:, 1), talus_point(:, 2), talus_point(:, 3), '.', 'MarkerSize', 30);
 % compute vectors lying on triangluar foot plane
@@ -140,4 +138,7 @@ end
 foot_distance = sqrt((end_C(1) - startA(1))^2 + (end_C(2) - startA(2))^2 + (end_C(3) - startA(3))^2);
 % Compute FTP
 FTP = (talus_distance / foot_distance)*100;
+% Title showing the computed value
+ttl = "FTP = " + sprintf('%.2f',FTP) + "%";
+title(ttl, 'Interpreter','none')
 end

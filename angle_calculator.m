@@ -126,8 +126,8 @@ if ~isempty(bone1) && ~isempty(bone2)
     camlight HEADLIGHT; material dull
     axis equal off
     xlabel('x'); ylabel('y'); zlabel('z'); set(gca,'XTick',[],'YTick',[],'ZTick',[])
-    ttl = "Angle = " + sprintf('%.2f°',angle);
-    if measurement ~= "" , ttl = measurement + "  —  " + ttl; end
+    ttl = "Angle = " + sprintf('%.2f',angle) + char(176);
+    if measurement ~= "" , ttl = measurement + "  " + char(8212) + "  " + ttl; end
     title(ttl, 'Interpreter','none')
 end
 end
