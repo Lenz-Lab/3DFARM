@@ -471,7 +471,11 @@ for col = 1:width(data)
         P_sesamoids = [bonestl_transformed.Medial_Sesamoid.Points; bonestl_transformed.Lateral_Sesamoid.Points];
         C_sesamoids = [bonestl_transformed.Medial_Sesamoid.ConnectivityList; bonestl_transformed.Lateral_Sesamoid.ConnectivityList + size(bonestl_transformed.Medial_Sesamoid.Points, 1)];
         bonestl_transformed.Sesamoids = triangulation(C_sesamoids, P_sesamoids);
-        
+
+        % Sesamoid mesh centroids
+        med_ses_point = mean(bonestl_transformed.Medial_Sesamoid.Points,1);
+        lat_ses_point = mean(bonestl_transformed.Lateral_Sesamoid.Points,1);
+
         % First-metatarsal mediolateral axis
         mt1_start = out_rotated.Metatarsal1(5,:);
         mt1_end = out_rotated.Metatarsal1(6,:);
@@ -487,10 +491,6 @@ for col = 1:width(data)
         % Project vectors onto the XZ plane
         v_mt1_xz = [v_mt1(1), 0, v_mt1(3)];
         v_ses_xz = [v_ses(1), 0, v_ses(3)];
-        
-        % Sesamoid mesh centroids
-        med_ses_point = mean(bonestl_transformed.Medial_Sesamoid.Points,1);
-        lat_ses_point = mean(bonestl_transformed.Lateral_Sesamoid.Points,1);
 
         if dot(v_mt1_xz, v_ses_xz) < 0
             temp = mt1_start;
@@ -511,7 +511,11 @@ for col = 1:width(data)
     end
 
     if ismember(8,all_bone_indx) % Distal Metatarsal Articular Angle
-        angles.DMAA = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:),out_rotated.Metatarsal1(9,:), out_rotated.Metatarsal1(8,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+        if side_indx == 1
+            angles.DMAA = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Metatarsal1(8,:), out_rotated.Proximal_Phalanx1(7,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+        elseif side_indx == 2
+            angles.DMAA = angle_calculator(out_rotated.Metatarsal1(8,:), out_rotated.Proximal_Phalanx1(7,:),out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+        end
     else
         angles.DMAA
     end

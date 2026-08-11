@@ -4,8 +4,8 @@ function [nodes_final, coords_final, coords_final_unit, Temp_Coordinates_Unit, D
 % It requires the nodes and coordinate systems, as well as the rotation and
 % translation matricies.
 
-Temp_Coordinates_origin = Temp_Nodes_Coords(end-24,:); % same as **
-Temp_Coordinates_temp = Temp_Nodes_Coords(end-24:end-19,:) - Temp_Coordinates_origin; %% second end should be same as ^^ below and then add 5 for the first end **
+Temp_Coordinates_origin = Temp_Nodes_Coords(end-23,:); % same as **
+Temp_Coordinates_temp = Temp_Nodes_Coords(end-23:end-18,:) - Temp_Coordinates_origin; %% second end should be same as ^^ below and then add 5 for the first end **
 Temp_Coordinates_temp = [0 0 0; Temp_Coordinates_temp(2,:)./norm(Temp_Coordinates_temp(2,:));
     0 0 0; Temp_Coordinates_temp(4,:)./norm(Temp_Coordinates_temp(4,:));
     0 0 0; Temp_Coordinates_temp(6,:)./norm(Temp_Coordinates_temp(6,:));];
@@ -50,7 +50,7 @@ if side_indx == 1
     nodes_coords_final = nodes_coords_final.*[-1,1,1]; % Flip back to right if applicable
 end
 
-DMAA_final = nodes_coords_final(end-18:end-17,:);
+DMAA_final = nodes_coords_final(end-17,:);
 NC_nav_final = nodes_coords_final(end-16,:);
 NC_cub_final = nodes_coords_final(end-15:end-14,:);
 MLCR_final = nodes_coords_final(end-13,:);
@@ -63,7 +63,7 @@ MEARY_final = nodes_coords_final(end-5:end-4,:);
 MDTA_final = nodes_coords_final(end-3:end-2,:);
 TLSA_final = nodes_coords_final(end-1:end,:);
 
-nodes_coords_final = nodes_coords_final(1:end-19,:); % add 1 to largest 'final' ^^
+nodes_coords_final = nodes_coords_final(1:end-18,:); % add 1 to largest 'final' ^^
 
 coods_final_origin = nodes_coords_final(end-1,:);
 coords_final_temp = nodes_coords_final(end-5:end,:) - coods_final_origin;

@@ -795,9 +795,13 @@ else
 end
 
 if bone_indx == 8
-    DMAA = [av_positive_y_nth_DMAA; av_negative_y_nth_DMAA];
+    % DMAA = [av_positive_y_nth_DMAA; av_negative_y_nth_DMAA];
+    DMAA = av_positive_y_nth_DMAA;
+elseif bone_indx == 15
+    DMAA = av_negative_y_nth;
 else
-    DMAA = [0,0,0; 0,0,0];
+    % DMAA = [0,0,0; 0,0,0];
+    DMAA = [0,0,0];
 end
 
 origin = [0,0,0];

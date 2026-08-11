@@ -132,7 +132,7 @@ for n = 1:length(bone_coord)
         case 8 % Metatarsal 1
             out(1:6, :) = coords_final_unit;
             out(7, :) = z_min_xyz_final;
-            out(8:9, :) = DMAA_final;
+            out(8, :) = DMAA_final;
         case 12 % Metatarsal 5
             out(1:6, :) = coords_final_unit;
             out(7, :) = z_min_xyz_final;
@@ -141,6 +141,9 @@ for n = 1:length(bone_coord)
             out(1:6, :) = coords_final_unit;
             out(7:8, :) = MDTA_final;
             out(9:10, :) = TLSA_final;
+        case 15 % Prox Phalanx 1
+            out(1:6, :) = coords_final_unit;
+            out(7, :) = DMAA_final;
         otherwise
             out = coords_final_unit;
     end
