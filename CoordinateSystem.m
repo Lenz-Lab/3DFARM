@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, DMAA] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, DMAA, M1Pro] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 vis = 0;
@@ -149,7 +149,7 @@ if vis == 1
     axis equal
 end
 
-%% Just for DMAA
+%% Just for DMAA and M1Pro
 % Positive Y Nth ROI DMAA
 y_min_DMAA = min(aligned_nodes_DMAA(:,2));
 y_max_DMAA = max(aligned_nodes_DMAA(:,2));
@@ -204,6 +204,66 @@ if vis == 1
     hold on
     plot3(negative_y_nth_x,negative_y_nth_y,negative_y_nth_z,'ys')
     plot3(av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+% Positive Z Nth ROI M1Pro
+z_min_M1Pro = min(aligned_nodes_DMAA(:,3));
+z_max_M1Pro = max(aligned_nodes_DMAA(:,3));
+range_z_M1Pro = z_max_M1Pro - z_min_M1Pro;
+
+nth_z = range_z_M1Pro/5;
+
+positive_z_nth = z_max_M1Pro - nth_z;
+
+positive_z_nth_ROI = (aligned_nodes_DMAA(:,3) >= positive_z_nth);
+
+positive_z_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*positive_z_nth_ROI);
+positive_z_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*positive_z_nth_ROI);
+positive_z_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*positive_z_nth_ROI);
+
+av_positive_z_nth_x = mean(positive_z_nth_x);
+av_positive_z_nth_y = mean(positive_z_nth_y);
+av_positive_z_nth_z = mean(positive_z_nth_z);
+
+av_positive_z_nth_M1Pro = [av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
+    hold on
+    plot3(positive_z_nth_x,positive_z_nth_y,positive_z_nth_z,'ys')
+    plot3(av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+% Negative Z nth ROI M1Pro
+negative_z_nth = z_min_M1Pro + nth_z;
+
+negative_z_nth_ROI = (aligned_nodes_DMAA(:,3) <= negative_z_nth);
+
+negative_z_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*negative_z_nth_ROI);
+negative_z_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*negative_z_nth_ROI);
+negative_z_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*negative_z_nth_ROI);
+
+av_negative_z_nth_x = mean(negative_z_nth_x);
+av_negative_z_nth_y = mean(negative_z_nth_y);
+av_negative_z_nth_z = mean(negative_z_nth_z);
+
+av_negative_z_nth_M1Pro = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
+    hold on
+    plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'ys')
+    plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
     xlabel('X')
     ylabel('Y')
     zlabel('Z')
@@ -797,11 +857,14 @@ end
 if bone_indx == 8
     % DMAA = [av_positive_y_nth_DMAA; av_negative_y_nth_DMAA];
     DMAA = av_positive_y_nth_DMAA;
+    M1Pro = [av_positive_z_nth_M1Pro; av_negative_z_nth_M1Pro];
 elseif bone_indx == 15
     DMAA = av_negative_y_nth;
+    M1Pro = [0,0,0];
 else
     % DMAA = [0,0,0; 0,0,0];
     DMAA = [0,0,0];
+    M1Pro = [0,0,0];
 end
 
 origin = [0,0,0];

@@ -316,6 +316,7 @@ for col = 1:width(data)
 
     YZ_viewer = [av_origin, av_Y, av_origin, av_Z];
     XZ_viewer = [av_origin, av_X, av_origin, av_Z];
+    XZ_viewer_flip = [av_origin, -av_X, av_origin, -av_Z];
     XY_viewer = [av_origin, av_X, av_origin, av_Y];
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Sagittal Talocalcaneal Angle
@@ -466,6 +467,12 @@ for col = 1:width(data)
         angles.HVA = NaN;
     end
 
+    if ismember(16,all_bone_indx) && ismember(9,all_bone_indx) % MTP2 Valgus Angle
+        angles.MTP2 = angle_calculator(out_rotated.Proximal_Phalanx2(1,:), out_rotated.Proximal_Phalanx2(2,:),out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.Metatarsal2, bonestl_transformed.Proximal_Phalanx2, "xy", side_indx, XY_viewer);
+    else
+        angles.MTP2 = NaN;
+    end
+
     if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) && ismember(8,all_bone_indx) % Sesamoid Rotation Angle
         % Combine sesamoids
         P_sesamoids = [bonestl_transformed.Medial_Sesamoid.Points; bonestl_transformed.Lateral_Sesamoid.Points];
@@ -520,6 +527,24 @@ for col = 1:width(data)
         angles.DMAA
     end
 
+    if ismember(8,all_bone_indx) % Metatarsal 1 Pronation Angle
+        diffe = abs(out_rotated.Metatarsal1(4,:) - out_rotated.Metatarsal1(3,:));
+        [~, maxIndex] = max(diffe);
+
+        if maxIndex == 3
+            SI_global = [out_rotated.Metatarsal1(3,1), out_rotated.Metatarsal1(3,2), out_rotated.Metatarsal1(4,3)];
+        elseif maxIndex == 1
+            SI_global = [out_rotated.Metatarsal1(4,1), out_rotated.Metatarsal1(3,2), out_rotated.Metatarsal1(3,3)];
+        elseif maxIndex == 2
+            SI_global = [out_rotated.Metatarsal1(3,1), out_rotated.Metatarsal1(4,2), out_rotated.Metatarsal1(3,3)];
+        end
+
+        angles.M1Pro = angle_calculator(out_rotated.Metatarsal1(3,:), SI_global, out_rotated.Metatarsal1(10,:), out_rotated.Metatarsal1(9,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer_flip);
+    else
+        angles.M1Pro = NaN;
+    end
+
+
     %% Save Angles
     A = [
         "Talocalcaneal Angle (Sagittal)",
@@ -544,9 +569,11 @@ for col = 1:width(data)
         "Medial-Lateral Column Ratio",
         "Naviculocuboid Overlap",
         "Hallux Valgus Angle",
+        "MTP2 Valgus Angle",
         "Sesamoid Rotation Angle",
         "Sesamoid Medial-Lateral Displacement",
-        "Distal Metatarsal Articular Angle"
+        "Distal Metatarsal Articular Angle",
+        "Metatarsal 1 Pronation Angle"
         ];
 
     if length(ind_name) > 31
