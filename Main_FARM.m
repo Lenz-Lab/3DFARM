@@ -539,7 +539,7 @@ for col = 1:width(data)
             SI_global = [out_rotated.Metatarsal1(3,1), out_rotated.Metatarsal1(4,2), out_rotated.Metatarsal1(3,3)];
         end
 
-        angles.M1Pro = angle_calculator(out_rotated.Metatarsal1(3,:), SI_global, out_rotated.Metatarsal1(10,:), out_rotated.Metatarsal1(9,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer_flip);
+        angles.M1Pro = angle_calculator(out_rotated.Metatarsal1(3,:), SI_global, out_rotated.Metatarsal1(10,:), out_rotated.Metatarsal1(9,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
     else
         angles.M1Pro = NaN;
     end

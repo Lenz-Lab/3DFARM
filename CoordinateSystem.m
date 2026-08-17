@@ -860,11 +860,11 @@ if bone_indx == 8
     M1Pro = [av_positive_z_nth_M1Pro; av_negative_z_nth_M1Pro];
 elseif bone_indx == 15
     DMAA = av_negative_y_nth;
-    M1Pro = [0,0,0];
+    M1Pro = [0,0,0; 0,0,0];
 else
     % DMAA = [0,0,0; 0,0,0];
     DMAA = [0,0,0];
-    M1Pro = [0,0,0];
+    M1Pro = [0,0,0; 0,0,0];
 end
 
 origin = [0,0,0];
