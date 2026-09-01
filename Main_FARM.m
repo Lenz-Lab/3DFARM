@@ -473,7 +473,7 @@ for col = 1:width(data)
             SI_global = [out_tibiarotated.Calcaneus(3,1), out_tibiarotated.Calcaneus(4,2), out_tibiarotated.Calcaneus(3,3)];
         end
 
-        angles.VVA = angle_calculator(out_tibiarotated.Calcaneus(3,:), SI_global, out_tibiarotated.Calcaneus(7,:), out_tibiarotated.Talus(15,:), bonestl_tibiatransformed.Calcaneus, bonestl_tibiatransformed.Calcaneus, "xz", side_indx, XZ_viewer);
+        angles.VVA = angle_calculator(out_tibiarotated.Calcaneus(3,:), SI_global, out_tibiarotated.Calcaneus(7,:), out_tibiarotated.Talus(15,:), bonestl_tibiatransformed.Calcaneus, bonestl_tibiatransformed.Talus, "xz", side_indx, XZ_viewer);
     else
         angles.VVA = NaN;
     end
@@ -509,70 +509,22 @@ for col = 1:width(data)
     bonestl_transformed.TibiaFibula = triangulation(C_tibiafibula, P_tibiafibula);
 
     if ismember(13,all_bone_indx) && ismember(14,all_bone_indx)
-        P_tib = out_rotated.Tibia(11,:);
-        P_fib = out_rotated.Fibula(7,:);
-        bimal_mid = (P_tib + P_fib) ./ 2;
-        % bimal_vec = P_fib - P_tib;
+        [med_mal, lat_mal] = bimal_calculator(bonestl_transformed, side_indx);
 
-        P_tib_moved = [P_tib(:,1), P_tib(:,2), 0];
-        P_fib_moved = [P_fib(:,1), P_fib(:,2), 0];
+        % HindfootProgression_BiMal: angle between the bimalleolar axis and
+        % the calcaneal AP axis, referenced from perpendicular (90 deg)
+        angles.HPBM = angle_calculator(med_mal, lat_mal, out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer, -90);
 
-        bimal_vec_moved = P_fib_moved - P_tib_moved;
-        % bimal_mid_moved = (P_tib_moved + P_fib_moved) ./ 2;
-
-        if side_indx == 1
-        perp_vec_moved = cross(bimal_vec_moved, [0,0,-1]);
-        elseif side_indx == 2
-        perp_vec_moved = cross(bimal_vec_moved, [0,0,1]);
+        if ismember(9,all_bone_indx)
+            % ForefootProgression_BiMal: angle between the bimalleolar axis
+            % and the 2nd metatarsal AP axis, referenced from perpendicular
+            angles.FPBM = angle_calculator(med_mal, lat_mal, out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Metatarsal2, "xy", side_indx, XY_viewer, -90);
+        else
+            angles.FPBM = NaN;
         end
-
-        perp_vec = [perp_vec_moved(:,1), perp_vec_moved(:,2), bimal_mid(:,3)];
-
-        % figure()
-        % plot3(bimal_mid_moved(:,1), bimal_mid_moved(:,2), bimal_mid_moved(:,3),'og');
-        % hold on
-        % plot3(P_tib_moved(:,1), P_tib_moved(:,2), P_tib_moved(:,3),'or');
-        % plot3(P_fib_moved(:,1), P_fib_moved(:,2), P_fib_moved(:,3),'ob');
-        % plot3([P_tib_moved(:,1), P_fib_moved(:,1)], [P_tib_moved(:,2), P_fib_moved(:,2)], [P_tib_moved(:,3), P_fib_moved(:,3)], 'k-', 'LineWidth', 2);
-        % plot3([bimal_mid_moved(:,1), perp_vec_moved(:,1)], [bimal_mid_moved(:,2), perp_vec_moved(:,2)], [bimal_mid_moved(:,3), perp_vec_moved(:,3)], 'g-', 'LineWidth', 2);
-        % 
-        % plot3(bimal_mid(:,1), bimal_mid(:,2), bimal_mid(:,3),'sg');
-        % plot3(P_tib(:,1), P_tib(:,2), P_tib(:,3),'sr');
-        % plot3(P_fib(:,1), P_fib(:,2), P_fib(:,3),'sb');
-        % plot3([P_tib(:,1), P_fib(:,1)], [P_tib(:,2), P_fib(:,2)], [P_tib(:,3), P_fib(:,3)], 'k-', 'LineWidth', 2);
-        % plot3([bimal_mid(:,1), perp_vec(:,1)], [bimal_mid(:,2), perp_vec(:,2)], [bimal_mid(:,3), perp_vec(:,3)], 'g-', 'LineWidth', 2);
-        % xlabel('x')
-        % ylabel('y')
-
-        % HindfootProgression_BiMal
-        angles.HPBM = angle_calculator(bimal_mid, perp_vec, out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer);
-        % hold on
-        % plot3(midpoint(:,1), midpoint(:,2), midpoint(:,3),'.g');
-        % plot3(bonestl_transformed.Fibula.Points(:,1),bonestl_transformed.Fibula.Points(:,2),bonestl_transformed.Fibula.Points(:,3),'.k');
-        % plot3(P_tib(:,1), P_tib(:,2), P_tib(:,3),'or');
-        % plot3(P_fib(:,1), P_fib(:,2), P_fib(:,3),'ob');
-    end
-
-    if ismember(13,all_bone_indx) && ismember(9,all_bone_indx)
-        P_tib = out_rotated.Tibia(11,:);
-        P_fib = out_rotated.Fibula(7,:);
-        bimal_mid = (P_tib + P_fib) ./ 2;
-
-        P_tib_moved = [P_tib(:,1), P_tib(:,2), 0];
-        P_fib_moved = [P_fib(:,1), P_fib(:,2), 0];
-
-        bimal_vec_moved = P_fib_moved - P_tib_moved;
-
-        if side_indx == 1
-            perp_vec_moved = cross(bimal_vec_moved, [0,0,-1]);
-        elseif side_indx == 2
-            perp_vec_moved = cross(bimal_vec_moved, [0,0,1]);
-        end
-
-        perp_vec = [perp_vec_moved(:,1), perp_vec_moved(:,2), bimal_mid(:,3)];
-
-        % ForefootProgression_BiMal
-        angles.FPBM = angle_calculator(bimal_mid, perp_vec, out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Metatarsal2, "xy", side_indx, XY_viewer);
+    else
+        angles.HPBM = NaN;
+        angles.FPBM = NaN;
     end
 
 
