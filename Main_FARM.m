@@ -527,7 +527,6 @@ for col = 1:width(data)
         angles.FPBM = NaN;
     end
 
-
     %% Save Angles
     A = [
         "Talocalcaneal Angle (Sagittal)",
