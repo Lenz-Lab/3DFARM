@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, M1Pro] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 vis = 0;
@@ -36,6 +36,19 @@ else
     aligned_nodes_NC = aligned_nodes;
 end
 
+%% Metatarsal 1 head
+if bone_indx == 8
+    y_min = min(aligned_nodes(:,2));
+    y_max = max(aligned_nodes(:,2));
+    range_y = y_max - y_min;
+    cutoff = range_y*0.25;
+
+    nodes_aligned_original = aligned_nodes;
+    aligned_nodes_M1head = [aligned_nodes(aligned_nodes(:,2)>cutoff,1) aligned_nodes(aligned_nodes(:,2)>cutoff,2) aligned_nodes(aligned_nodes(:,2)>cutoff,3)];
+else
+    aligned_nodes_M1head = aligned_nodes;
+end
+
 %% Split up the bone into nth sections in all three planes
 x_min = min(aligned_nodes(:,1));
 y_min = min(aligned_nodes(:,2));
@@ -62,6 +75,8 @@ elseif bone_indx >= 5 && bone_indx <= 7 % Cuneiforms
 elseif bone_indx >= 8 && bone_indx <= 12 % Metatarsals
     n = 3;
 elseif bone_indx == 13 || bone_indx == 14 % Tibia or Fibula
+    n = 3;
+elseif bone_indx == 15 || bone_indx == 16 % Phalanx
     n = 3;
 end
 
@@ -125,6 +140,67 @@ av_negative_z_nth_tta = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_n
 if vis == 1
     figure()
     plot3(aligned_nodes(:,1),aligned_nodes(:,2),aligned_nodes(:,3),'k.')
+    hold on
+    plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'ys')
+    plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+%% Just for M1Pro
+% Positive Z Nth ROI M1Pro
+z_min_M1Pro = min(aligned_nodes_M1head(:,3));
+z_max_M1Pro = max(aligned_nodes_M1head(:,3));
+range_z_M1Pro = z_max_M1Pro - z_min_M1Pro;
+
+nth_z = range_z_M1Pro/5;
+
+positive_z_nth = z_max_M1Pro - nth_z;
+
+positive_z_nth_ROI = (aligned_nodes_M1head(:,3) >= positive_z_nth);
+
+positive_z_nth_x = nonzeros(aligned_nodes_M1head(:,1).*positive_z_nth_ROI);
+positive_z_nth_y = nonzeros(aligned_nodes_M1head(:,2).*positive_z_nth_ROI);
+positive_z_nth_z = nonzeros(aligned_nodes_M1head(:,3).*positive_z_nth_ROI);
+
+av_positive_z_nth_x = mean(positive_z_nth_x);
+av_positive_z_nth_y = mean(positive_z_nth_y);
+av_positive_z_nth_z = mean(positive_z_nth_z);
+
+av_positive_z_nth_M1Pro = [av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_M1head(:,1),aligned_nodes_M1head(:,2),aligned_nodes_M1head(:,3),'k.')
+    hold on
+    plot3(positive_z_nth_x,positive_z_nth_y,positive_z_nth_z,'ys')
+    plot3(av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z,'r.','MarkerSize',50)
+    xlabel('X')
+    ylabel('Y')
+    zlabel('Z')
+    axis equal
+end
+
+% Negative Z nth ROI M1Pro
+negative_z_nth = z_min_M1Pro + nth_z;
+
+negative_z_nth_ROI = (aligned_nodes_M1head(:,3) <= negative_z_nth);
+
+negative_z_nth_x = nonzeros(aligned_nodes_M1head(:,1).*negative_z_nth_ROI);
+negative_z_nth_y = nonzeros(aligned_nodes_M1head(:,2).*negative_z_nth_ROI);
+negative_z_nth_z = nonzeros(aligned_nodes_M1head(:,3).*negative_z_nth_ROI);
+
+av_negative_z_nth_x = mean(negative_z_nth_x);
+av_negative_z_nth_y = mean(negative_z_nth_y);
+av_negative_z_nth_z = mean(negative_z_nth_z);
+
+av_negative_z_nth_M1Pro = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z];
+
+if vis == 1
+    figure()
+    plot3(aligned_nodes_M1head(:,1),aligned_nodes_M1head(:,2),aligned_nodes_M1head(:,3),'k.')
     hold on
     plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'ys')
     plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
@@ -664,7 +740,7 @@ if bone_indx == 3 % Navicular
     first_point = av_positive_x_nth;
     second_point = av_negative_x_nth;
     third_point = av_positive_z_nth;
-elseif bone_indx >= 13 % Tibia, Fibula
+elseif bone_indx == 13 || bone_indx == 14 % Tibia, Fibula
     first_point = av_positive_z_nth;
     second_point = av_negative_z_nth;
     if av_negative_z_nth(3) > av_negative_x_nth(3)
@@ -716,6 +792,12 @@ if bone_indx == 3
     NC_nav = av_negative_z_nth_NC_nav;
 else
     NC_nav = [0,0,0];
+end
+
+if bone_indx == 8
+    M1Pro = [av_positive_z_nth_M1Pro; av_negative_z_nth_M1Pro];
+else
+    M1Pro = [0,0,0; 0,0,0];
 end
 
 origin = [0,0,0];

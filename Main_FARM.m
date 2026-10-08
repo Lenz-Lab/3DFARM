@@ -49,23 +49,25 @@ names = data{1, :};
 % Lists for detemining bone and side
 list_bone = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
     'Lateral_Cuneiform','Metatarsal1','Metatarsal2','Metatarsal3','Metatarsal4','Metatarsal5',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','Proximal_Phalanx1','Proximal_Phalanx2','Medial_Sesamoid','Lateral_Sesamoid'};
 list_bone2 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','First_Metatarsal','Second_Metatarsal','Third_Metatarsal','Fourth_Metatarsal','Fifth_Metatarsal',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','First_Proximal_Phalanx','Second_Proximal_Phalanx','Sesamoid1','Sesamoid2'};
 list_bone3 = {'Talus', 'Calcaneus', 'Navicular', 'Cuboid', 'Medial_Cuneiform','Intermediate_Cuneiform',...
     'Lateral_Cuneiform','Metatarsal_1','Metatarsal_2','Metatarsal_3','Metatarsal_4','Metatarsal_5',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','Proximal_Phalanx_1','Proximal_Phalanx_2','Sesamoid_1','Sesamoid_2'};
 list_bone4 = {'Talus', 'Calc', 'Navicular', 'Cuboid', 'Med_Cuneiform','Int_Cuneiform',...
     'Lat_Cuneiform','1st_Met','2nd_Met','3rd_Met','4th_Met','5th_Met',...
-    'Tibia','Fibula'};
+    'Tibia','Fibula','1st_Proximal_Phalanx','2nd_Proximal_Phalanx','Medial_Sesamoid','Lateral_Sesamoid'};
 list_side_folder = {'Right','_R.','_R_','_R ','_R\','_R','Left','_L.','_L_','_L ','_L\','_L'};
 list_side = {'Right','Left'};
 
 %% Iterate through each person (column)
 for col = 1:width(data)
     % Clear variables for each person
-    clear side_indx bone_metadata side_folder_indx
+    clear side_indx bone_metadata side_folder_indx all_bone_indx bonestl out angles ...
+        out_rotated bonestl_transformed out_tibiarotated bonestl_tibiatransformed ...
+        out_saltzrotated bonestl_saltztransformed
     ind_name = names{col};
     fprintf('Processing files for: %s\n', ind_name);
 
@@ -175,14 +177,17 @@ for col = 1:width(data)
     % Unique bone indices actually loaded for this person
     bone_inds_unique = unique(all_bone_indx(:)');
 
+    template_root = fullfile("Template_Bones","Anatomical_Bones", side_str);
+
     % Build combined SUBJECT tri
     allPts = [];
     allTri = [];
-    boneRanges = struct('name', {}, 'v_idx', {}, 'f_idx', {});
+    boneRanges = struct('name', {}, 'v_idx', {}, 'f_idx', {}, 'has_tpl', {});
 
     for i = 1:numel(bone_inds_unique)
         bidx = bone_inds_unique(i);
         boneName = list_bone{bidx};
+        has_tpl = exist(fullfile(template_root, boneName + ".stl"), 'file') == 2;
 
         TRb = bonestl.(boneName);
         V   = TRb.Points;
@@ -195,15 +200,20 @@ for col = 1:width(data)
 
         v_idx = (offsetV + 1) : (offsetV + size(V,1));
         f_idx = (offsetF + 1) : (offsetF + size(F,1));
-        boneRanges(end+1) = struct('name', boneName, 'v_idx', v_idx, 'f_idx', f_idx); %#ok<SAGROW>
+        boneRanges(end+1) = struct('name', boneName, 'v_idx', v_idx, 'f_idx', f_idx, 'has_tpl', has_tpl); %#ok<SAGROW>
     end
 
     TR_subject_combined = triangulation(allTri, allPts);
     TR_subject_combined = center(TR_subject_combined,3);
 
-    % Build combined TEMPLATE tri
-    template_root = fullfile("Template_Bones","Anatomical_Bones", side_str);
+    % Only bones with a full foot template (not phalanges/sesamoids) drive the
+    % alignment; the resulting transform is applied to every bone
+    fit_idx = [boneRanges([boneRanges.has_tpl]).v_idx];
+    if isempty(fit_idx)
+        error('None of the input bones have a full foot template; include at least one tarsal or metatarsal.');
+    end
 
+    % Build combined TEMPLATE tri
     allPtsT = [];
     allTriT = [];
 
@@ -228,11 +238,12 @@ for col = 1:width(data)
     TR_template_combined = triangulation(allTriT, allPtsT);
 
     if trouble == 0
-        [aligned_subject_combined_points] = icp_complete(TR_template_combined.Points,TR_subject_combined.Points,TR_template_combined.ConnectivityList,2,trouble);
+        subject_combined_points = TR_subject_combined.Points;
     elseif trouble == 1
-        manual_aligned_subject_combined_points = manual_align_points(TR_subject_combined.Points, side_indx);
-        [aligned_subject_combined_points] = icp_complete(TR_template_combined.Points,manual_aligned_subject_combined_points,TR_template_combined.ConnectivityList,2,trouble);
+        subject_combined_points = manual_align_points(TR_subject_combined.Points, side_indx);
     end
+    [~, R_full, T_full] = icp_complete(TR_template_combined.Points,subject_combined_points(fit_idx,:),TR_template_combined.ConnectivityList,2,trouble);
+    aligned_subject_combined_points = (R_full * subject_combined_points' + T_full)';
 
     % A fast global -> local index map we’ll reuse and reset per bone
     Ntot = size(aligned_subject_combined_points, 1);
@@ -262,7 +273,7 @@ for col = 1:width(data)
 
     %% AAFACT calculations
     for j = 1:length(all_bone_indx)
-        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13])
+        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13, 15, 16])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             TR_bone = bonestl.(AAFACT_bone);
             bone_indx = all_bone_indx(j);
@@ -316,6 +327,7 @@ for col = 1:width(data)
 
     YZ_viewer = [av_origin, av_Y, av_origin, av_Z];
     XZ_viewer = [av_origin, av_X, av_origin, av_Z];
+    XZ_viewer_flip = [av_origin, -av_X, av_origin, -av_Z];
     XY_viewer = [av_origin, av_X, av_origin, av_Y];
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) % Sagittal Talocalcaneal Angle
@@ -460,6 +472,86 @@ for col = 1:width(data)
         angles.NCO = NaN;
     end
 
+    if ismember(15,all_bone_indx) && ismember(8,all_bone_indx) % Hallux Valgus Angle
+        angles.HVA = angle_calculator(out_rotated.Proximal_Phalanx1(1,:), out_rotated.Proximal_Phalanx1(2,:),out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Proximal_Phalanx1, "xy", side_indx, XY_viewer);
+    else
+        angles.HVA = NaN;
+    end
+
+    if ismember(16,all_bone_indx) && ismember(9,all_bone_indx) % MTP2 Valgus Angle
+        angles.MTP2 = angle_calculator(out_rotated.Proximal_Phalanx2(1,:), out_rotated.Proximal_Phalanx2(2,:),out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.Metatarsal2, bonestl_transformed.Proximal_Phalanx2, "xy", side_indx, XY_viewer);
+    else
+        angles.MTP2 = NaN;
+    end
+
+    if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) && ismember(8,all_bone_indx) % Sesamoid Rotation Angle
+        % Combine sesamoids
+        P_sesamoids = [bonestl_transformed.Medial_Sesamoid.Points; bonestl_transformed.Lateral_Sesamoid.Points];
+        C_sesamoids = [bonestl_transformed.Medial_Sesamoid.ConnectivityList; bonestl_transformed.Lateral_Sesamoid.ConnectivityList + size(bonestl_transformed.Medial_Sesamoid.Points, 1)];
+        bonestl_transformed.Sesamoids = triangulation(C_sesamoids, P_sesamoids);
+
+        % Sesamoid mesh centroids
+        med_ses_point = mean(bonestl_transformed.Medial_Sesamoid.Points,1);
+        lat_ses_point = mean(bonestl_transformed.Lateral_Sesamoid.Points,1);
+
+        % First-metatarsal mediolateral axis
+        mt1_start = out_rotated.Metatarsal1(5,:);
+        mt1_end = out_rotated.Metatarsal1(6,:);
+
+        % Sesamoid axis: medial to lateral
+        ses_start = med_ses_point;
+        ses_end = lat_ses_point;
+
+        % Build the two vectors
+        v_mt1 = mt1_end - mt1_start;
+        v_ses = ses_end - ses_start;
+
+        % Project vectors onto the XZ plane
+        v_mt1_xz = [v_mt1(1), 0, v_mt1(3)];
+        v_ses_xz = [v_ses(1), 0, v_ses(3)];
+
+        if dot(v_mt1_xz, v_ses_xz) < 0
+            temp = mt1_start;
+            mt1_start = mt1_end;
+            mt1_end = temp;
+        end
+
+        angles.SRA = angle_calculator(mt1_start, mt1_end, med_ses_point, lat_ses_point, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
+    else
+        angles.SRA = NaN;
+    end
+
+    if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) && ismember(8,all_bone_indx) % Sesamoid Medial-Lateral Displacement
+        midpoint_ses = (med_ses_point + lat_ses_point) ./ 2;
+        [angles.SMLD, ~, ~] = smld_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), midpoint_ses, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+    else
+        angles.SMLD = NaN;
+    end
+
+    if ismember(8,all_bone_indx) % Distal Metatarsal Articular Angle
+        angles.DMAA = dmaa_calculator(bonestl_transformed.Metatarsal1, out_rotated.Metatarsal1, side_indx, 1);
+    else
+        angles.DMAA = NaN;
+    end
+
+    if ismember(8,all_bone_indx) % Metatarsal 1 Pronation Angle
+        diffe = abs(out_rotated.Metatarsal1(4,:) - out_rotated.Metatarsal1(3,:));
+        [~, maxIndex] = max(diffe);
+
+        if maxIndex == 3
+            SI_global = [out_rotated.Metatarsal1(3,1), out_rotated.Metatarsal1(3,2), out_rotated.Metatarsal1(4,3)];
+        elseif maxIndex == 1
+            SI_global = [out_rotated.Metatarsal1(4,1), out_rotated.Metatarsal1(3,2), out_rotated.Metatarsal1(3,3)];
+        elseif maxIndex == 2
+            SI_global = [out_rotated.Metatarsal1(3,1), out_rotated.Metatarsal1(4,2), out_rotated.Metatarsal1(3,3)];
+        end
+
+        angles.M1Pro = angle_calculator(out_rotated.Metatarsal1(3,:), SI_global, out_rotated.Metatarsal1(9,:), out_rotated.Metatarsal1(8,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
+    else
+        angles.M1Pro = NaN;
+    end
+
+
     %% Save Angles
     A = [
         "Talocalcaneal Angle (Sagittal)",
@@ -482,7 +574,13 @@ for col = 1:width(data)
         "Tibiocalcaneal Angle (Axial)",
         "Metatarsal Stacking Angle",
         "Medial-Lateral Column Ratio",
-        "Naviculocuboid Overlap"
+        "Naviculocuboid Overlap",
+        "Hallux Valgus Angle",
+        "MTP2 Valgus Angle",
+        "Sesamoid Rotation Angle",
+        "Sesamoid Medial-Lateral Displacement",
+        "Distal Metatarsal Articular Angle",
+        "Metatarsal 1 Pronation Angle"
         ];
 
     if length(ind_name) > 31

@@ -1,4 +1,4 @@
-function [aligned_nodes] = icp_complete(q,p,template_conlist,iterations,trouble)
+function [aligned_nodes, R_total, T_total] = icp_complete(q,p,template_conlist,iterations,trouble)
 
 nodes_template = q;
 nodes = p;
@@ -150,6 +150,10 @@ best_T = T.(smallest_field);  % The best T vector
 best_rotation_matrix = r.(smallest_field);  % The rotation matrix from the original structure
 % Perform the final alignment calculation
 aligned_nodes = (best_R * ((nodes*best_rotation_matrix)') + repmat(best_T, 1, length(nodes')))';  % Align the nodes
+
+% Combined rigid transform so other points can be aligned: aligned = (R_total*p' + T_total)'
+R_total = best_R * best_rotation_matrix';
+T_total = best_T;
 % % Store the results for the final transformation
 % iflip = best_rotation_matrix;  % The rotation matrix used for alignment
 % iR = best_R;  % The best R matrix
