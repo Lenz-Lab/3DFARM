@@ -381,7 +381,7 @@ for col = 1:width(data)
         angles.HAA20 = NaN;
     end
 
-    if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Hindfoot Moment Arm
+    if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % Hindfoot Moment Arm
         [angles.HMA, Q, segPts] = vect_distance_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(4,:), out_tibiarotated.Calcaneus(7,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Calcaneus, "xz", side_indx, XZ_viewer);
     else
         angles.HMA = NaN;
@@ -448,7 +448,7 @@ for col = 1:width(data)
         angles.TibCA = NaN;
     end
 
-    if ismember(1,all_bone_indx) && ismember(13,all_bone_indx) % Axial Tibiocalcaneal Angle
+    if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % Axial Tibiocalcaneal Angle
         angles.TibCAx = angle_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(2,:), out_tibiarotated.Calcaneus(1,:), out_tibiarotated.Calcaneus(2,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Calcaneus, "xy", side_indx, XY_viewer);
     else
         angles.TibCAx = NaN;

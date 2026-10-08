@@ -195,87 +195,87 @@ iterations = 100;
 
 % Rotations
 r.r0 = eye(3);
-r.rx = rotx(90);
-r.rxx = rotx(180);
-r.rxxx = rotx(270);
-r.ry = roty(90);
-r.ryy = roty(180);
-r.ryyy = roty(270);
-r.rz = rotz(90);
-r.rzz = rotz(180);
-r.rzzz = rotz(270);
+r.rx = rot_x(90);
+r.rxx = rot_x(180);
+r.rxxx = rot_x(270);
+r.ry = rot_y(90);
+r.ryy = rot_y(180);
+r.ryyy = rot_y(270);
+r.rz = rot_z(90);
+r.rzz = rot_z(180);
+r.rzzz = rot_z(270);
 
-r.rxy = rotx(90) * roty(90);
-r.rxyy = rotx(90) * roty(180);
-r.rxyyy = rotx(90) * roty(270);
+r.rxy = rot_x(90) * rot_y(90);
+r.rxyy = rot_x(90) * rot_y(180);
+r.rxyyy = rot_x(90) * rot_y(270);
 
-r.rxxy = rotx(180) * roty(90);
-r.rxxyy = rotx(180) * roty(180);
-r.rxxyyy = rotx(180) * roty(270);
+r.rxxy = rot_x(180) * rot_y(90);
+r.rxxyy = rot_x(180) * rot_y(180);
+r.rxxyyy = rot_x(180) * rot_y(270);
 
-r.rxxxy = rotx(270) * roty(90);
-r.rxxxyy = rotx(270) * roty(180);
-r.rxxxyyy = rotx(270) * roty(270);
+r.rxxxy = rot_x(270) * rot_y(90);
+r.rxxxyy = rot_x(270) * rot_y(180);
+r.rxxxyyy = rot_x(270) * rot_y(270);
 
-r.rxz = rotx(90) * rotz(90);
-r.rxzz = rotx(90) * rotz(180);
-r.rxzzz = rotx(90) * rotz(270);
+r.rxz = rot_x(90) * rot_z(90);
+r.rxzz = rot_x(90) * rot_z(180);
+r.rxzzz = rot_x(90) * rot_z(270);
 
-r.rxxz = rotx(180) * rotz(90);
-r.rxxzz = rotx(180) * rotz(180);
-r.rxxzzz = rotx(180) * rotz(270);
+r.rxxz = rot_x(180) * rot_z(90);
+r.rxxzz = rot_x(180) * rot_z(180);
+r.rxxzzz = rot_x(180) * rot_z(270);
 
-r.rxxxz = rotx(270) * rotz(90);
-r.rxxxzz = rotx(270) * rotz(180);
-r.rxxxzzz = rotx(270) * rotz(270);
+r.rxxxz = rot_x(270) * rot_z(90);
+r.rxxxzz = rot_x(270) * rot_z(180);
+r.rxxxzzz = rot_x(270) * rot_z(270);
 
-r.ryx = roty(90) * rotx(90);
-r.ryxx = roty(90) * rotx(180);
-r.ryxxx = roty(90) * rotx(270);
+r.ryx = rot_y(90) * rot_x(90);
+r.ryxx = rot_y(90) * rot_x(180);
+r.ryxxx = rot_y(90) * rot_x(270);
 
-r.ryyx = roty(180) * rotx(90);
-r.ryyxx = roty(180) * rotx(180);
-r.ryyxxx = roty(180) * rotx(270);
+r.ryyx = rot_y(180) * rot_x(90);
+r.ryyxx = rot_y(180) * rot_x(180);
+r.ryyxxx = rot_y(180) * rot_x(270);
 
-r.ryyyx = roty(270) * rotx(90);
-r.ryyyxx = roty(270) * rotx(180);
-r.ryyyxxx = roty(270) * rotx(270);
+r.ryyyx = rot_y(270) * rot_x(90);
+r.ryyyxx = rot_y(270) * rot_x(180);
+r.ryyyxxx = rot_y(270) * rot_x(270);
 
-r.ryz = roty(90) * rotz(90);
-r.ryzz = roty(90) * rotz(180);
-r.ryzzz = roty(90) * rotz(270);
+r.ryz = rot_y(90) * rot_z(90);
+r.ryzz = rot_y(90) * rot_z(180);
+r.ryzzz = rot_y(90) * rot_z(270);
 
-r.ryyz = roty(180) * rotz(90);
-r.ryyzz = roty(180) * rotz(180);
-r.ryyzzz = roty(180) * rotz(270);
+r.ryyz = rot_y(180) * rot_z(90);
+r.ryyzz = rot_y(180) * rot_z(180);
+r.ryyzzz = rot_y(180) * rot_z(270);
 
-r.ryyyz = roty(270) * rotz(90);
-r.ryyyzz = roty(270) * rotz(180);
-r.ryyyzzz = roty(270) * rotz(270);
+r.ryyyz = rot_y(270) * rot_z(90);
+r.ryyyzz = rot_y(270) * rot_z(180);
+r.ryyyzzz = rot_y(270) * rot_z(270);
 
-r.rzx = rotz(90) * rotx(90);
-r.rzxx = rotz(90) * rotx(180);
-r.rzxxx = rotz(90) * rotx(270);
+r.rzx = rot_z(90) * rot_x(90);
+r.rzxx = rot_z(90) * rot_x(180);
+r.rzxxx = rot_z(90) * rot_x(270);
 
-r.rzzx = rotz(180) * rotx(90);
-r.rzzxx = rotz(180) * rotx(180);
-r.rzzxxx = rotz(180) * rotx(270);
+r.rzzx = rot_z(180) * rot_x(90);
+r.rzzxx = rot_z(180) * rot_x(180);
+r.rzzxxx = rot_z(180) * rot_x(270);
 
-r.rzzzx = rotz(270) * rotx(90);
-r.rzzzxx = rotz(270) * rotx(180);
-r.rzzzxxx = rotz(270) * rotx(270);
+r.rzzzx = rot_z(270) * rot_x(90);
+r.rzzzxx = rot_z(270) * rot_x(180);
+r.rzzzxxx = rot_z(270) * rot_x(270);
 
-r.rzy = rotz(90) * roty(90);
-r.rzyy = rotz(90) * roty(180);
-r.rzyyy = rotz(90) * roty(270);
+r.rzy = rot_z(90) * rot_y(90);
+r.rzyy = rot_z(90) * rot_y(180);
+r.rzyyy = rot_z(90) * rot_y(270);
 
-r.rzzy = rotz(180) * roty(90);
-r.rzzyy = rotz(180) * roty(180);
-r.rzzyyy = rotz(180) * roty(270);
+r.rzzy = rot_z(180) * rot_y(90);
+r.rzzyy = rot_z(180) * rot_y(180);
+r.rzzyyy = rot_z(180) * rot_y(270);
 
-r.rzzzy = rotz(270) * roty(90);
-r.rzzzyy = rotz(270) * roty(180);
-r.rzzzyyy = rotz(270) * roty(270);
+r.rzzzy = rot_z(270) * rot_y(90);
+r.rzzzyy = rot_z(270) * rot_y(180);
+r.rzzzyyy = rot_z(270) * rot_y(270);
 
 fields = fieldnames(r);
 
@@ -390,9 +390,9 @@ if (tibfib_switch == 1 && bone_indx == 13) || (tibfib_switch == 1 && bone_indx =
     nodes_test1 = [nodes_test(:,1) nodes_test(:,2) nodes_test(:,3);
         plane(:,1) plane(:,2) plane(:,3)];
 
-    nodes_test2 = nodes_test1*rotz(90);
-    nodes_test3 = nodes_test1*rotz(180);
-    nodes_test4 = nodes_test1*rotz(270);
+    nodes_test2 = nodes_test1*rot_z(90);
+    nodes_test3 = nodes_test1*rot_z(180);
+    nodes_test4 = nodes_test1*rot_z(270);
 
     [Rtw1,Ttw1,Etw1] = icp(nodes_template',nodes_test1', iterations,'Matching','kDtree','WorstRejection',0.1);
 
@@ -418,20 +418,20 @@ if (tibfib_switch == 1 && bone_indx == 13) || (tibfib_switch == 1 && bone_indx =
             sT_tibia = Ttw1;
         end
     elseif Etw == Etw2(end)
-        sflip = rotz(90);
-        aligned_nodes = aligned_nodes*rotz(90);
+        sflip = rot_z(90);
+        aligned_nodes = aligned_nodes*rot_z(90);
         aligned_nodes = (Rtw2*(aligned_nodes') + repmat(Ttw2,1,length(aligned_nodes')))';
         sR_tibia= Rtw2;
         sT_tibia= Ttw2;
     elseif Etw == Etw3(end)
-        sflip = rotz(180);
-        aligned_nodes = aligned_nodes*rotz(180);
+        sflip = rot_z(180);
+        aligned_nodes = aligned_nodes*rot_z(180);
         aligned_nodes = (Rtw3*(aligned_nodes') + repmat(Ttw3,1,length(aligned_nodes')))';
         sR_tibia= Rtw3;
         sT_tibia= Ttw3;
     elseif Etw == Etw4(end)
-        sflip = rotz(270);
-        aligned_nodes = aligned_nodes*rotz(270);
+        sflip = rot_z(270);
+        aligned_nodes = aligned_nodes*rot_z(270);
         aligned_nodes = (Rtw4*(aligned_nodes') + repmat(Ttw4,1,length(aligned_nodes')))';
         sR_tibia= Rtw4;
         sT_tibia= Ttw4;
@@ -489,3 +489,15 @@ RTs.yellow = [];
 % ylabel('Y')
 % zlabel('Z')
 % axis equal
+
+
+%% Helper Functions
+% Rotation matrices about the x, y, and z axes (angle in degrees)
+function R = rot_x(deg)
+R = [1 0 0; 0 cosd(deg) -sind(deg); 0 sind(deg) cosd(deg)];
+
+function R = rot_y(deg)
+R = [cosd(deg) 0 sind(deg); 0 1 0; -sind(deg) 0 cosd(deg)];
+
+function R = rot_z(deg)
+R = [cosd(deg) -sind(deg) 0; sind(deg) cosd(deg) 0; 0 0 1];
