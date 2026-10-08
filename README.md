@@ -21,7 +21,6 @@ This work is supported by the following grant:
 * MATLAB R2020b or later
 * Statistics and Machine Learning Toolbox
 * Optimization Toolbox
-* Phased Array System Toolbox (for `rotx`, `roty`, `rotz` used in the alignment)
 
 ## Quick start
 
