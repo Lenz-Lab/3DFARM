@@ -2,7 +2,7 @@ function out = AAFACT_calculation(TR_bone, bone_indx, side_indx)
 
 %% Initialize 'out'
 % Define the size mapping for initialization based on bone_indx
-size_mapping = containers.Map({1, 2, 3, 8, 12, 13}, {23, 16, 7, 7, 7, 10}); % Default to 6 if not specified
+size_mapping = containers.Map({1, 2, 3, 8, 12, 13}, {23, 16, 7, 9, 7, 10}); % Default to 6 if not specified
 default_size = 6;
 
 if isKey(size_mapping, bone_indx)
@@ -45,7 +45,7 @@ for n = 1:length(bone_coord)
     [aligned_nodes, RTs] = icp_template_simp(bone_indx, nodes, bone_coord(n), better_start);
 
     %% Performs coordinate system calculation
-    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, DMAA, M1Pro] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
+    [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, M1Pro] = CoordinateSystem(aligned_nodes, bone_indx, bone_coord(n), side_indx);
 
     %% Joint Origin
     if joint_indx > 1
@@ -61,10 +61,10 @@ for n = 1:length(bone_coord)
     end
 
     %% Temporarily Attach Coordinate System
-    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; M1Pro; DMAA; NC_nav; NC_cub; MLCR; HAA; TTA; FAO_peak; z_min_xyz; z_min_xyz_MSA; MEARY; MDTA; TLSA];
+    Temp_Nodes_Coords = [Temp_Nodes; Temp_Coordinates; M1Pro; NC_nav; NC_cub; MLCR; HAA; TTA; FAO_peak; z_min_xyz; z_min_xyz_MSA; MEARY; MDTA; TLSA];
 
     %% Reorient and Translate to Original Input Origin and Orientation
-    [~, coords_final, coords_final_unit, ~, M1Pro_final, DMAA_final, NC_nav_final, NC_cub_final, MLCR_final, HAA_final, TTA_final, talus_coords_FAO, z_min_xyz_final, z_min_xyz_MSA_final, MEARY_final, MDTA_final, TLSA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
+    [~, coords_final, coords_final_unit, ~, M1Pro_final, NC_nav_final, NC_cub_final, MLCR_final, HAA_final, TTA_final, talus_coords_FAO, z_min_xyz_final, z_min_xyz_MSA_final, MEARY_final, MDTA_final, TLSA_final] = reorient(Temp_Nodes_Coords, cm_nodes, side_indx, RTs);
 
     %% Final Plotting
     % screen_size = get(0, 'ScreenSize');
@@ -132,8 +132,7 @@ for n = 1:length(bone_coord)
         case 8 % Metatarsal 1
             out(1:6, :) = coords_final_unit;
             out(7, :) = z_min_xyz_final;
-            out(8, :) = DMAA_final;
-            out(9:10, :) = M1Pro_final;
+            out(8:9, :) = M1Pro_final;
         case 12 % Metatarsal 5
             out(1:6, :) = coords_final_unit;
             out(7, :) = z_min_xyz_final;
@@ -142,9 +141,6 @@ for n = 1:length(bone_coord)
             out(1:6, :) = coords_final_unit;
             out(7:8, :) = MDTA_final;
             out(9:10, :) = TLSA_final;
-        case 15 % Prox Phalanx 1
-            out(1:6, :) = coords_final_unit;
-            out(7, :) = DMAA_final;
         otherwise
             out = coords_final_unit;
     end

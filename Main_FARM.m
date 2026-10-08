@@ -65,7 +65,9 @@ list_side = {'Right','Left'};
 %% Iterate through each person (column)
 for col = 1:width(data)
     % Clear variables for each person
-    clear side_indx bone_metadata side_folder_indx
+    clear side_indx bone_metadata side_folder_indx all_bone_indx bonestl out angles ...
+        out_rotated bonestl_transformed out_tibiarotated bonestl_tibiatransformed ...
+        out_saltzrotated bonestl_saltztransformed
     ind_name = names{col};
     fprintf('Processing files for: %s\n', ind_name);
 
@@ -175,14 +177,17 @@ for col = 1:width(data)
     % Unique bone indices actually loaded for this person
     bone_inds_unique = unique(all_bone_indx(:)');
 
+    template_root = fullfile("Template_Bones","Anatomical_Bones", side_str);
+
     % Build combined SUBJECT tri
     allPts = [];
     allTri = [];
-    boneRanges = struct('name', {}, 'v_idx', {}, 'f_idx', {});
+    boneRanges = struct('name', {}, 'v_idx', {}, 'f_idx', {}, 'has_tpl', {});
 
     for i = 1:numel(bone_inds_unique)
         bidx = bone_inds_unique(i);
         boneName = list_bone{bidx};
+        has_tpl = exist(fullfile(template_root, boneName + ".stl"), 'file') == 2;
 
         TRb = bonestl.(boneName);
         V   = TRb.Points;
@@ -195,15 +200,20 @@ for col = 1:width(data)
 
         v_idx = (offsetV + 1) : (offsetV + size(V,1));
         f_idx = (offsetF + 1) : (offsetF + size(F,1));
-        boneRanges(end+1) = struct('name', boneName, 'v_idx', v_idx, 'f_idx', f_idx); %#ok<SAGROW>
+        boneRanges(end+1) = struct('name', boneName, 'v_idx', v_idx, 'f_idx', f_idx, 'has_tpl', has_tpl); %#ok<SAGROW>
     end
 
     TR_subject_combined = triangulation(allTri, allPts);
     TR_subject_combined = center(TR_subject_combined,3);
 
-    % Build combined TEMPLATE tri
-    template_root = fullfile("Template_Bones","Anatomical_Bones", side_str);
+    % Only bones with a full foot template (not phalanges/sesamoids) drive the
+    % alignment; the resulting transform is applied to every bone
+    fit_idx = [boneRanges([boneRanges.has_tpl]).v_idx];
+    if isempty(fit_idx)
+        error('None of the input bones have a full foot template; include at least one tarsal or metatarsal.');
+    end
 
+    % Build combined TEMPLATE tri
     allPtsT = [];
     allTriT = [];
 
@@ -228,11 +238,12 @@ for col = 1:width(data)
     TR_template_combined = triangulation(allTriT, allPtsT);
 
     if trouble == 0
-        [aligned_subject_combined_points] = icp_complete(TR_template_combined.Points,TR_subject_combined.Points,TR_template_combined.ConnectivityList,2,trouble);
+        subject_combined_points = TR_subject_combined.Points;
     elseif trouble == 1
-        manual_aligned_subject_combined_points = manual_align_points(TR_subject_combined.Points, side_indx);
-        [aligned_subject_combined_points] = icp_complete(TR_template_combined.Points,manual_aligned_subject_combined_points,TR_template_combined.ConnectivityList,2,trouble);
+        subject_combined_points = manual_align_points(TR_subject_combined.Points, side_indx);
     end
+    [~, R_full, T_full] = icp_complete(TR_template_combined.Points,subject_combined_points(fit_idx,:),TR_template_combined.ConnectivityList,2,trouble);
+    aligned_subject_combined_points = (R_full * subject_combined_points' + T_full)';
 
     % A fast global -> local index map we’ll reuse and reset per bone
     Ntot = size(aligned_subject_combined_points, 1);
@@ -505,7 +516,7 @@ for col = 1:width(data)
             mt1_end = temp;
         end
 
-        angles.SRA = angle_calculator(out_rotated.Metatarsal1(5,:), out_rotated.Metatarsal1(6,:),med_ses_point, lat_ses_point, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
+        angles.SRA = angle_calculator(mt1_start, mt1_end, med_ses_point, lat_ses_point, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
     else
         angles.SRA = NaN;
     end
@@ -518,13 +529,9 @@ for col = 1:width(data)
     end
 
     if ismember(8,all_bone_indx) % Distal Metatarsal Articular Angle
-        if side_indx == 1
-            angles.DMAA = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Metatarsal1(8,:), out_rotated.Proximal_Phalanx1(7,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
-        elseif side_indx == 2
-            angles.DMAA = angle_calculator(out_rotated.Metatarsal1(8,:), out_rotated.Proximal_Phalanx1(7,:),out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
-        end
+        angles.DMAA = dmaa_calculator(bonestl_transformed.Metatarsal1, out_rotated.Metatarsal1, side_indx, 1);
     else
-        angles.DMAA
+        angles.DMAA = NaN;
     end
 
     if ismember(8,all_bone_indx) % Metatarsal 1 Pronation Angle
@@ -539,7 +546,7 @@ for col = 1:width(data)
             SI_global = [out_rotated.Metatarsal1(3,1), out_rotated.Metatarsal1(4,2), out_rotated.Metatarsal1(3,3)];
         end
 
-        angles.M1Pro = angle_calculator(out_rotated.Metatarsal1(3,:), SI_global, out_rotated.Metatarsal1(10,:), out_rotated.Metatarsal1(9,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
+        angles.M1Pro = angle_calculator(out_rotated.Metatarsal1(3,:), SI_global, out_rotated.Metatarsal1(9,:), out_rotated.Metatarsal1(8,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
     else
         angles.M1Pro = NaN;
     end

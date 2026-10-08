@@ -1,4 +1,4 @@
-function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, DMAA, M1Pro] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
+function [Temp_Coordinates, Temp_Nodes, MDTA, TLSA, z_min_xyz, z_min_xyz_MSA, MEARY, TTA, HAA, MLCR, NC_nav, NC_cub, M1Pro] = CoordinateSystem(aligned_nodes,bone_indx,bone_coord,side_indx)
 % This function produces the coordinate system for the users bone in the
 % temporarily aligned orientation.
 vis = 0;
@@ -44,9 +44,9 @@ if bone_indx == 8
     cutoff = range_y*0.25;
 
     nodes_aligned_original = aligned_nodes;
-    aligned_nodes_DMAA = [aligned_nodes(aligned_nodes(:,2)>cutoff,1) aligned_nodes(aligned_nodes(:,2)>cutoff,2) aligned_nodes(aligned_nodes(:,2)>cutoff,3)];
+    aligned_nodes_M1head = [aligned_nodes(aligned_nodes(:,2)>cutoff,1) aligned_nodes(aligned_nodes(:,2)>cutoff,2) aligned_nodes(aligned_nodes(:,2)>cutoff,3)];
 else
-    aligned_nodes_DMAA = aligned_nodes;
+    aligned_nodes_M1head = aligned_nodes;
 end
 
 %% Split up the bone into nth sections in all three planes
@@ -149,81 +149,21 @@ if vis == 1
     axis equal
 end
 
-%% Just for DMAA and M1Pro
-% Positive Y Nth ROI DMAA
-y_min_DMAA = min(aligned_nodes_DMAA(:,2));
-y_max_DMAA = max(aligned_nodes_DMAA(:,2));
-range_y_DMAA = y_max_DMAA - y_min_DMAA;
-
-nth_y = range_y_DMAA/5;
-
-positive_y_nth = y_max_DMAA - nth_y;
-
-positive_y_nth_ROI = (aligned_nodes_DMAA(:,2) >= positive_y_nth);
-
-positive_y_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*positive_y_nth_ROI);
-positive_y_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*positive_y_nth_ROI);
-positive_y_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*positive_y_nth_ROI);
-
-av_positive_y_nth_x = mean(positive_y_nth_x);
-av_positive_y_nth_y = mean(positive_y_nth_y);
-av_positive_y_nth_z = mean(positive_y_nth_z);
-
-av_positive_y_nth_DMAA = [av_positive_y_nth_x,av_positive_y_nth_y,av_positive_y_nth_z];
-
-if vis == 1
-    figure()
-    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
-    hold on
-    plot3(positive_y_nth_x,positive_y_nth_y,positive_y_nth_z,'ys')
-    plot3(av_positive_y_nth_x,av_positive_y_nth_y,av_positive_y_nth_z,'r.','MarkerSize',50)
-    xlabel('X')
-    ylabel('Y')
-    zlabel('Z')
-    axis equal
-end
-
-% Negative Y nth ROI HAA
-negative_y_nth = y_min_DMAA + nth_y;
-
-negative_y_nth_ROI = (aligned_nodes_DMAA(:,2) <= negative_y_nth);
-
-negative_y_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*negative_y_nth_ROI);
-negative_y_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*negative_y_nth_ROI);
-negative_y_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*negative_y_nth_ROI);
-
-av_negative_y_nth_x = mean(negative_y_nth_x);
-av_negative_y_nth_y = mean(negative_y_nth_y);
-av_negative_y_nth_z = mean(negative_y_nth_z);
-
-av_negative_y_nth_DMAA = [av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z];
-
-if vis == 1
-    figure()
-    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
-    hold on
-    plot3(negative_y_nth_x,negative_y_nth_y,negative_y_nth_z,'ys')
-    plot3(av_negative_y_nth_x,av_negative_y_nth_y,av_negative_y_nth_z,'r.','MarkerSize',50)
-    xlabel('X')
-    ylabel('Y')
-    zlabel('Z')
-    axis equal
-end
-
+%% Just for M1Pro
 % Positive Z Nth ROI M1Pro
-z_min_M1Pro = min(aligned_nodes_DMAA(:,3));
-z_max_M1Pro = max(aligned_nodes_DMAA(:,3));
+z_min_M1Pro = min(aligned_nodes_M1head(:,3));
+z_max_M1Pro = max(aligned_nodes_M1head(:,3));
 range_z_M1Pro = z_max_M1Pro - z_min_M1Pro;
 
 nth_z = range_z_M1Pro/5;
 
 positive_z_nth = z_max_M1Pro - nth_z;
 
-positive_z_nth_ROI = (aligned_nodes_DMAA(:,3) >= positive_z_nth);
+positive_z_nth_ROI = (aligned_nodes_M1head(:,3) >= positive_z_nth);
 
-positive_z_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*positive_z_nth_ROI);
-positive_z_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*positive_z_nth_ROI);
-positive_z_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*positive_z_nth_ROI);
+positive_z_nth_x = nonzeros(aligned_nodes_M1head(:,1).*positive_z_nth_ROI);
+positive_z_nth_y = nonzeros(aligned_nodes_M1head(:,2).*positive_z_nth_ROI);
+positive_z_nth_z = nonzeros(aligned_nodes_M1head(:,3).*positive_z_nth_ROI);
 
 av_positive_z_nth_x = mean(positive_z_nth_x);
 av_positive_z_nth_y = mean(positive_z_nth_y);
@@ -233,7 +173,7 @@ av_positive_z_nth_M1Pro = [av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z
 
 if vis == 1
     figure()
-    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
+    plot3(aligned_nodes_M1head(:,1),aligned_nodes_M1head(:,2),aligned_nodes_M1head(:,3),'k.')
     hold on
     plot3(positive_z_nth_x,positive_z_nth_y,positive_z_nth_z,'ys')
     plot3(av_positive_z_nth_x,av_positive_z_nth_y,av_positive_z_nth_z,'r.','MarkerSize',50)
@@ -246,11 +186,11 @@ end
 % Negative Z nth ROI M1Pro
 negative_z_nth = z_min_M1Pro + nth_z;
 
-negative_z_nth_ROI = (aligned_nodes_DMAA(:,3) <= negative_z_nth);
+negative_z_nth_ROI = (aligned_nodes_M1head(:,3) <= negative_z_nth);
 
-negative_z_nth_x = nonzeros(aligned_nodes_DMAA(:,1).*negative_z_nth_ROI);
-negative_z_nth_y = nonzeros(aligned_nodes_DMAA(:,2).*negative_z_nth_ROI);
-negative_z_nth_z = nonzeros(aligned_nodes_DMAA(:,3).*negative_z_nth_ROI);
+negative_z_nth_x = nonzeros(aligned_nodes_M1head(:,1).*negative_z_nth_ROI);
+negative_z_nth_y = nonzeros(aligned_nodes_M1head(:,2).*negative_z_nth_ROI);
+negative_z_nth_z = nonzeros(aligned_nodes_M1head(:,3).*negative_z_nth_ROI);
 
 av_negative_z_nth_x = mean(negative_z_nth_x);
 av_negative_z_nth_y = mean(negative_z_nth_y);
@@ -260,7 +200,7 @@ av_negative_z_nth_M1Pro = [av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z
 
 if vis == 1
     figure()
-    plot3(aligned_nodes_DMAA(:,1),aligned_nodes_DMAA(:,2),aligned_nodes_DMAA(:,3),'k.')
+    plot3(aligned_nodes_M1head(:,1),aligned_nodes_M1head(:,2),aligned_nodes_M1head(:,3),'k.')
     hold on
     plot3(negative_z_nth_x,negative_z_nth_y,negative_z_nth_z,'ys')
     plot3(av_negative_z_nth_x,av_negative_z_nth_y,av_negative_z_nth_z,'r.','MarkerSize',50)
@@ -855,15 +795,8 @@ else
 end
 
 if bone_indx == 8
-    % DMAA = [av_positive_y_nth_DMAA; av_negative_y_nth_DMAA];
-    DMAA = av_positive_y_nth_DMAA;
     M1Pro = [av_positive_z_nth_M1Pro; av_negative_z_nth_M1Pro];
-elseif bone_indx == 15
-    DMAA = av_negative_y_nth;
-    M1Pro = [0,0,0; 0,0,0];
 else
-    % DMAA = [0,0,0; 0,0,0];
-    DMAA = [0,0,0];
     M1Pro = [0,0,0; 0,0,0];
 end
 
