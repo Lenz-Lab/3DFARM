@@ -1,12 +1,13 @@
 function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plane, side_indx, viewer, varargin)
 % ANGLE_CALCULATOR
-% angle = angle_calculator(startA,endA,startB,endB,bone1,bone2,plane,side_indx,viewer,[measurement])
+% angle = angle_calculator(startA,endA,startB,endB,bone1,bone2,plane,side_indx,viewer,[offset],[measurement])
 %
 % startA,endA,startB,endB : 1x3 vectors (points) defining two directed vectors
 % bone1,bone2              : structs with .ConnectivityList and .Points (from stlread)
 % plane                    : "yz","xz","xy","3D" (string or char)
 % side_indx                : 1 = right, 2 = left
 % viewer                   : optional 1x12 or 4x3 array of points [Astart Aend Bstart Bend] for camera framing (can be [])
+% offset                   : optional degrees added to the computed angle (e.g. -90); applied before the plot title so the figure matches the returned value
 % measurement              : optional string for plot title/label
 %
 % Conventions (right-handed):
@@ -16,9 +17,15 @@ function angle = angle_calculator(startA, endA, startB, endB, bone1, bone2, plan
 %
 % Returns signed angle in degrees.
 
-% ---------- Optional label ----------
+% ---------- Optional offset/label ----------
 if nargin > 9 && ~isempty(varargin{1})
-    measurement = string(varargin{1});
+    offset = varargin{1};
+else
+    offset = 0;
+end
+
+if nargin > 10 && ~isempty(varargin{2})
+    measurement = string(varargin{2});
 else
     measurement = "";
 end
@@ -83,6 +90,10 @@ if side_indx == 2 % left
         angle = -angle;
     end
 end
+
+% ---------- Offset ----------
+% Applied before the plot title so the figure always matches the returned value.
+angle = angle + offset;
 
 % ---------- Visualization (optional) ----------
 if ~isempty(bone1) && ~isempty(bone2)

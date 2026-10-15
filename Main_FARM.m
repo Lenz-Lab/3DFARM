@@ -39,6 +39,10 @@ choice = questdlg('Are you troubleshooting alignment?', ...
     'Troubleshoot?', 'Yes', 'No', 'No');
 trouble = strcmp(choice,'Yes');
 
+choice = questdlg('Also export VICON comparison measurements to a separate spreadsheet?', ...
+    'VICON?', 'Yes', 'No', 'No');
+vicon = strcmp(choice,'Yes');
+
 data = readtable(sheet_path, 'ReadVariableNames', false, 'Sheet', selected_sheet);
 temp = strfind(folder_path,'\');
 FolderName = folder_path(temp(end-1)+1:end-1);
@@ -65,7 +69,7 @@ list_side = {'Right','Left'};
 %% Iterate through each person (column)
 for col = 1:width(data)
     % Clear variables for each person
-    clear side_indx bone_metadata side_folder_indx all_bone_indx bonestl out angles ...
+    clear side_indx bone_metadata side_folder_indx all_bone_indx bonestl out angles vicon_angles ...
         out_rotated bonestl_transformed out_tibiarotated bonestl_tibiatransformed ...
         out_saltzrotated bonestl_saltztransformed
     ind_name = names{col};
@@ -273,7 +277,7 @@ for col = 1:width(data)
 
     %% AAFACT calculations
     for j = 1:length(all_bone_indx)
-        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13, 15, 16])
+        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13, 14, 15, 16])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             TR_bone = bonestl.(AAFACT_bone);
             bone_indx = all_bone_indx(j);
@@ -551,6 +555,68 @@ for col = 1:width(data)
         angles.M1Pro = NaN;
     end
 
+    %% VICON Measurements (optional, exported to a separate spreadsheet)
+    if vicon
+        if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % VarValAngle
+            diffe = abs(out_tibiarotated.Calcaneus(4,:) - out_tibiarotated.Calcaneus(3,:));
+            [~, maxIndex] = max(diffe);
+
+            if maxIndex == 3
+                SI_global = [out_tibiarotated.Calcaneus(3,1), out_tibiarotated.Calcaneus(3,2), out_tibiarotated.Calcaneus(4,3)];
+            elseif maxIndex == 1
+                SI_global = [out_tibiarotated.Calcaneus(4,1), out_tibiarotated.Calcaneus(3,2), out_tibiarotated.Calcaneus(3,3)];
+            elseif maxIndex == 2
+                SI_global = [out_tibiarotated.Calcaneus(3,1), out_tibiarotated.Calcaneus(4,2), out_tibiarotated.Calcaneus(3,3)];
+            end
+
+            vicon_angles.VVA = angle_calculator(out_tibiarotated.Calcaneus(3,:), SI_global, out_tibiarotated.Calcaneus(7,:), out_tibiarotated.Talus(15,:), bonestl_tibiatransformed.Calcaneus, bonestl_tibiatransformed.Talus, "xz", side_indx, XZ_viewer);
+        else
+            vicon_angles.VVA = NaN;
+        end
+
+        vicon_angles.CP = angles.CIA; % Calcaneal Pitch
+
+        if ismember(8,all_bone_indx) % 1stRayPitch
+            diffe = abs(out_rotated.Metatarsal1(2,:) - out_rotated.Metatarsal1(1,:));
+            [~, maxIndex] = max(diffe);
+
+            if maxIndex == 2
+                AP_global = [out_rotated.Metatarsal1(1,1), out_rotated.Metatarsal1(2,2), out_rotated.Metatarsal1(1,3)];
+            elseif maxIndex == 1
+                AP_global = [out_rotated.Metatarsal1(2,1), out_rotated.Metatarsal1(1,2), out_rotated.Metatarsal1(1,3)];
+            elseif maxIndex == 3
+                AP_global = [out_rotated.Metatarsal1(1,1), out_rotated.Metatarsal1(1,2), out_rotated.Metatarsal1(2,3)];
+            end
+
+            vicon_angles.M1P = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Metatarsal1(1,:), AP_global, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "yz", side_indx, YZ_viewer);
+        else
+            vicon_angles.M1P = NaN;
+        end
+
+        vicon_angles.HPBM = NaN;
+        vicon_angles.FPBM = NaN;
+        if ismember(13,all_bone_indx) && ismember(14,all_bone_indx)
+            % Combine tibia and fibula into one triangulation for plotting
+            P_tibiafibula = [bonestl_transformed.Tibia.Points; bonestl_transformed.Fibula.Points];
+            C_tibiafibula = [bonestl_transformed.Tibia.ConnectivityList; bonestl_transformed.Fibula.ConnectivityList + size(bonestl_transformed.Tibia.Points, 1)];
+            bonestl_transformed.TibiaFibula = triangulation(C_tibiafibula, P_tibiafibula);
+
+            [med_mal, lat_mal] = bimal_calculator(bonestl_transformed, side_indx);
+
+            if ismember(2,all_bone_indx)
+                % HindfootProgression_BiMal: angle between the bimalleolar axis and
+                % the calcaneal AP axis, referenced from perpendicular (90 deg)
+                vicon_angles.HPBM = angle_calculator(med_mal, lat_mal, out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer, -90);
+            end
+
+            if ismember(9,all_bone_indx)
+                % ForefootProgression_BiMal: angle between the bimalleolar axis
+                % and the 2nd metatarsal AP axis, referenced from perpendicular
+                vicon_angles.FPBM = angle_calculator(med_mal, lat_mal, out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Metatarsal2, "xy", side_indx, XY_viewer, -90);
+            end
+        end
+    end
+
 
     %% Save Angles
     A = [
@@ -601,10 +667,41 @@ for col = 1:width(data)
             writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
             blankCells = repmat("", length(A)+2, 2);
             writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', range);
-            try_index = 5;
+            break
         catch
             disp("Error attempting to write to Excel file, reattempting...")
-            continue
+        end
+    end
+
+    %% Save VICON Measurements
+    if vicon
+        VICON_Names = [
+            "VarValAngle",
+            "Calcaneal Pitch",
+            "1stRayPitch",
+            "HindfootProgression_relBiMal",
+            "ForefootProgression_relBiMal"
+            ];
+
+        vicon_fields = fieldnames(vicon_angles);
+        vicon_values = zeros(length(vicon_fields),1);
+        for i=1:length(vicon_fields)
+            vicon_values(i,1) = vicon_angles.(vicon_fields{i});
+        end
+
+        vicon_range = strcat('A',string(length(VICON_Names)+1),':B100');
+
+        for try_index = 1:5
+            try
+                xlfilename = strcat(folder_path,'Vicon_Radiograph_Measurements_', FolderName, '.xlsx');
+                writematrix(VICON_Names,xlfilename,'Sheet',ind_name);
+                writematrix(vicon_values,xlfilename,'Sheet',ind_name,'Range','B1');
+                blankCells = repmat("", length(VICON_Names)+2, 2);
+                writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', vicon_range);
+                break
+            catch
+                disp("Error attempting to write to VICON Excel file, reattempting...")
+            end
         end
     end
 end
