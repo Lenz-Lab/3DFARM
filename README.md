@@ -26,8 +26,8 @@ This work is supported by the following grant:
 
 1. Clone or download this repository and open it in MATLAB.
 2. Run `Main_FARM.m`.
-3. Select `Demo_Data/FARM_Example.xlsx`, then choose a sheet.
-4. Answer **No** to "Are you troubleshooting alignment?".
+3. In the setup window, click **Browse...** and select `Demo_Data/FARM_Example.xlsx`.
+4. Leave the options at their defaults and click **Run**.
 
 The measurements are written to `Demo_Data/Radiograph_Measurements_Demo_Data.xlsx`, with one sheet per subject.
 
@@ -71,20 +71,25 @@ The FARM sheet is an Excel file listing the bones for each subject, with one col
 
 * Row 1 is the subject name. It is used as the output sheet name, shortened to 31 characters.
 * The remaining rows are the `.stl` files, as paths relative to the folder containing the FARM sheet. Columns can have different lengths.
-* If the workbook has more than one sheet, you are asked which one to process.
+* If the workbook has more than one sheet, choose which one to process from the **Worksheet** list in the setup window.
 
 ## Running
 
-Run `Main_FARM.m` and select your FARM sheet. You are then asked **"Are you troubleshooting alignment?"**:
+Run `Main_FARM.m`. A setup window opens where you choose the FARM sheet (and worksheet) and any optional settings, then click **Run**. The options are:
 
-* **No** (default): the bones are aligned to the templates automatically.
-* **Yes**: you are shown the bones and asked which anatomical direction the highlighted regions face, and the automatic alignment starts from your answer. Use this if the measurement figures show a subject aligned incorrectly.
+* **Show a figure for each measurement** (on by default): a figure opens for each measurement showing the bones, the axes or landmarks used, and the value, so you can check every result visually. Uncheck it to run without figures, for example on a large batch you have already checked.
+* **Troubleshoot alignment** (off by default): you are shown the bones and asked which anatomical direction the highlighted regions face, and the automatic alignment starts from your answer. Use this if the measurement figures show a subject aligned incorrectly, or if a subject was skipped. When unchecked, the bones are aligned to the templates automatically.
+* **Export VICON measurements** (off by default): also writes the [VICON comparison measurements](#vicon-measurements-optional) to a separate spreadsheet.
 
-Processing then runs subject by subject. A figure opens for each measurement showing the bones, the axes or landmarks used, and the value, so you can check every result visually.
+Processing then runs subject by subject.
+
+If the automatic alignment fails for a subject, which usually happens when the anatomy differs a lot from the templates, the subject is skipped and the run continues with the next one. The skipped subjects are listed in a window at the end; rerun them with **Troubleshoot alignment** checked. If a bone outside the talus, calcaneus, first metatarsal, and tibia can't be aligned, the subject is still measured, a warning is shown, and the measurements that use that bone are `NaN`.
 
 ## Output
 
 `Radiograph_Measurements_<folder>.xlsx` is written to the folder containing the FARM sheet, where `<folder>` is that folder's name. It has one sheet per subject and one row per measurement, in the order listed below. A measurement whose bones were not provided is `NaN`.
+
+If **Export VICON measurements** is checked, `Vicon_Radiograph_Measurements_<folder>.xlsx` is written alongside it in the same layout.
 
 ## Measurements
 
@@ -125,6 +130,20 @@ Units are degrees unless noted. The view is the radiographic view each measureme
 * **Hindfoot Moment Arm** and **Sesamoid Medial-Lateral Displacement** are positive when the point is medial to the reference axis.
 * **Distal Metatarsal Articular Angle (DMAA)** is positive for lateral (valgus) deviation of the articular surface. The first metatarsal head is projected onto the AP plane, and the medial and lateral edges of the articular surface are taken as the corners of the head outline on either side of the distal tip. DMAA is the angle between the perpendicular to the line through those edges and the first metatarsal axis. On heads without clear corners an edge can be placed too far proximally, so check the DMAA figure.
 * **Metatarsal 1 Pronation Angle** differed little between hallux valgus and control feet in testing; interpret it with caution.
+
+### VICON measurements (optional)
+
+Written to the separate VICON spreadsheet only when **Export VICON measurements** is checked.
+
+| Measurement | View | Bones needed (plus talus) |
+|---|---|---|
+| VarValAngle | Hindfoot alignment | Calcaneus, tibia |
+| Calcaneal Pitch | Lateral | Calcaneus (same as Calcaneal Inclination Angle) |
+| 1stRayPitch | Lateral | First metatarsal |
+| HindfootProgression_relBiMal | AP foot | Tibia, fibula, calcaneus |
+| ForefootProgression_relBiMal | AP foot | Tibia, fibula, second metatarsal |
+
+The two progression angles are measured from the bimalleolar axis (the medial malleolus on the tibia to the lateral malleolus on the fibula) to the calcaneal or second metatarsal axis, referenced from perpendicular.
 
 ## How it works
 

@@ -14,30 +14,14 @@ clear, clc, close all
 % process. I recommend a file name similar to this for ease:
 % group_#_bone_laterality.stl (ex. ABC_01_Tibia_Right.stl)
 
-% Setup: Load Spreadsheet with bone File Names
-[filename, folder_path] = uigetfile('*.xlsx*', 'Please select your FARM sheet');
-if isequal(filename, 0)
-    error('No file selected.');
-end
-sheet_path = fullfile(folder_path, filename);
-
-% Get list of sheets
-sheets = sheetnames(sheet_path);
-
-% If there is more than one sheet, ask the user to select one
-if length(sheets) > 1
-    [sheet_idx, tf] = listdlg('PromptString', 'Select a sheet:', 'SelectionMode', 'single', 'ListString', sheets);
-    if ~tf
-        error('No sheet selected. Exiting.');
-    end
-    selected_sheet = sheets{sheet_idx};
-else
-    selected_sheet = sheets{1};
-end
-
-choice = questdlg('Are you troubleshooting alignment?', ...
-    'Troubleshoot?', 'Yes', 'No', 'No');
-trouble = strcmp(choice,'Yes');
+% Setup: Choose the Spreadsheet with bone File Names and any optional settings
+opts = farm_setup_dialog();
+folder_path = opts.folder_path;
+sheet_path = fullfile(folder_path, opts.filename);
+selected_sheet = opts.selected_sheet;
+trouble = opts.trouble;
+farm_plots(opts.plots);
+vicon = opts.vicon;
 
 data = readtable(sheet_path, 'ReadVariableNames', false, 'Sheet', selected_sheet);
 temp = strfind(folder_path,'\');
@@ -63,9 +47,10 @@ list_side_folder = {'Right','_R.','_R_','_R ','_R\','_R','Left','_L.','_L_','_L 
 list_side = {'Right','Left'};
 
 %% Iterate through each person (column)
+skipped = strings(0,1); % messages for subjects that could not be measured
 for col = 1:width(data)
     % Clear variables for each person
-    clear side_indx bone_metadata side_folder_indx all_bone_indx bonestl out angles ...
+    clear side_indx bone_metadata side_folder_indx all_bone_indx bonestl out angles vicon_angles ...
         out_rotated bonestl_transformed out_tibiarotated bonestl_tibiatransformed ...
         out_saltzrotated bonestl_saltztransformed
     ind_name = names{col};
@@ -273,7 +258,7 @@ for col = 1:width(data)
 
     %% AAFACT calculations
     for j = 1:length(all_bone_indx)
-        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13, 15, 16])
+        if ismember(all_bone_indx(j), [1, 2, 3, 4, 8, 9, 12, 13, 14, 15, 16])
             AAFACT_bone = list_bone{all_bone_indx(j)};
             TR_bone = bonestl.(AAFACT_bone);
             bone_indx = all_bone_indx(j);
@@ -284,6 +269,37 @@ for col = 1:width(data)
             % Add filler for unused bones
             out.(AAFACT_bone) = [0 0 0];
         end
+    end
+
+    %% Check Alignment
+    % When the automatic alignment to the templates fails (usually because the
+    % anatomy differs a lot from the templates), a bone's coordinate system
+    % comes out as NaN. The talus, calcaneus, first metatarsal, and tibia define
+    % the reference frames, so the subject can't be measured without them.
+    ref_bones = intersect({'Talus', 'Calcaneus', 'Metatarsal1', 'Tibia'}, fieldnames(out), 'stable');
+    failed_ref = ref_bones(cellfun(@(b) any(isnan(out.(b)(1:6,:)), 'all'), ref_bones));
+    other_bones = setdiff(fieldnames(out), ref_bones, 'stable');
+    failed_other = other_bones(cellfun(@(b) any(isnan(out.(b)), 'all'), other_bones));
+
+    if ~isempty(failed_ref)
+        if trouble == 0
+            msg = sprintf(['%s was skipped: the %s coordinate system could not be found. This usually means the ' ...
+                'automatic alignment failed because the anatomy differs a lot from the templates (complex anatomy). ' ...
+                'We recommend rerunning this subject with "Troubleshoot alignment" checked.'], ...
+                ind_name, strjoin(strrep(failed_ref, '_', ' '), ', '));
+        else
+            msg = sprintf(['%s was skipped: the %s coordinate system could not be found, even with troubleshoot ' ...
+                'alignment. Check the bone files and the directions chosen during alignment.'], ...
+                ind_name, strjoin(strrep(failed_ref, '_', ' '), ', '));
+        end
+        warning('FARM:alignment', '%s', msg);
+        skipped(end+1,1) = string(msg); %#ok<SAGROW>
+        continue
+    end
+
+    if ~isempty(failed_other)
+        warning('FARM:alignment', '%s: the %s coordinate system could not be found, so measurements using it are NaN.', ...
+            ind_name, strjoin(strrep(failed_other, '_', ' '), ', '));
     end
 
     %% Transform View
@@ -529,7 +545,7 @@ for col = 1:width(data)
     end
 
     if ismember(8,all_bone_indx) % Distal Metatarsal Articular Angle
-        angles.DMAA = dmaa_calculator(bonestl_transformed.Metatarsal1, out_rotated.Metatarsal1, side_indx, 1);
+        angles.DMAA = dmaa_calculator(bonestl_transformed.Metatarsal1, out_rotated.Metatarsal1, side_indx, farm_plots());
     else
         angles.DMAA = NaN;
     end
@@ -549,6 +565,68 @@ for col = 1:width(data)
         angles.M1Pro = angle_calculator(out_rotated.Metatarsal1(3,:), SI_global, out_rotated.Metatarsal1(9,:), out_rotated.Metatarsal1(8,:), bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "xz", side_indx, XZ_viewer);
     else
         angles.M1Pro = NaN;
+    end
+
+    %% VICON Measurements (optional, exported to a separate spreadsheet)
+    if vicon
+        if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % VarValAngle
+            diffe = abs(out_tibiarotated.Calcaneus(4,:) - out_tibiarotated.Calcaneus(3,:));
+            [~, maxIndex] = max(diffe);
+
+            if maxIndex == 3
+                SI_global = [out_tibiarotated.Calcaneus(3,1), out_tibiarotated.Calcaneus(3,2), out_tibiarotated.Calcaneus(4,3)];
+            elseif maxIndex == 1
+                SI_global = [out_tibiarotated.Calcaneus(4,1), out_tibiarotated.Calcaneus(3,2), out_tibiarotated.Calcaneus(3,3)];
+            elseif maxIndex == 2
+                SI_global = [out_tibiarotated.Calcaneus(3,1), out_tibiarotated.Calcaneus(4,2), out_tibiarotated.Calcaneus(3,3)];
+            end
+
+            vicon_angles.VVA = angle_calculator(out_tibiarotated.Calcaneus(3,:), SI_global, out_tibiarotated.Calcaneus(7,:), out_tibiarotated.Talus(15,:), bonestl_tibiatransformed.Calcaneus, bonestl_tibiatransformed.Talus, "xz", side_indx, XZ_viewer);
+        else
+            vicon_angles.VVA = NaN;
+        end
+
+        vicon_angles.CP = angles.CIA; % Calcaneal Pitch
+
+        if ismember(8,all_bone_indx) % 1stRayPitch
+            diffe = abs(out_rotated.Metatarsal1(2,:) - out_rotated.Metatarsal1(1,:));
+            [~, maxIndex] = max(diffe);
+
+            if maxIndex == 2
+                AP_global = [out_rotated.Metatarsal1(1,1), out_rotated.Metatarsal1(2,2), out_rotated.Metatarsal1(1,3)];
+            elseif maxIndex == 1
+                AP_global = [out_rotated.Metatarsal1(2,1), out_rotated.Metatarsal1(1,2), out_rotated.Metatarsal1(1,3)];
+            elseif maxIndex == 3
+                AP_global = [out_rotated.Metatarsal1(1,1), out_rotated.Metatarsal1(1,2), out_rotated.Metatarsal1(2,3)];
+            end
+
+            vicon_angles.M1P = angle_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), out_rotated.Metatarsal1(1,:), AP_global, bonestl_transformed.Metatarsal1, bonestl_transformed.Metatarsal1, "yz", side_indx, YZ_viewer);
+        else
+            vicon_angles.M1P = NaN;
+        end
+
+        vicon_angles.HPBM = NaN;
+        vicon_angles.FPBM = NaN;
+        if ismember(13,all_bone_indx) && ismember(14,all_bone_indx)
+            % Combine tibia and fibula into one triangulation for plotting
+            P_tibiafibula = [bonestl_transformed.Tibia.Points; bonestl_transformed.Fibula.Points];
+            C_tibiafibula = [bonestl_transformed.Tibia.ConnectivityList; bonestl_transformed.Fibula.ConnectivityList + size(bonestl_transformed.Tibia.Points, 1)];
+            bonestl_transformed.TibiaFibula = triangulation(C_tibiafibula, P_tibiafibula);
+
+            [med_mal, lat_mal] = bimal_calculator(bonestl_transformed, side_indx);
+
+            if ismember(2,all_bone_indx)
+                % HindfootProgression_BiMal: angle between the bimalleolar axis and
+                % the calcaneal AP axis, referenced from perpendicular (90 deg)
+                vicon_angles.HPBM = angle_calculator(med_mal, lat_mal, out_rotated.Calcaneus(1,:), out_rotated.Calcaneus(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Calcaneus, "xy", side_indx, XY_viewer, -90);
+            end
+
+            if ismember(9,all_bone_indx)
+                % ForefootProgression_BiMal: angle between the bimalleolar axis
+                % and the 2nd metatarsal AP axis, referenced from perpendicular
+                vicon_angles.FPBM = angle_calculator(med_mal, lat_mal, out_rotated.Metatarsal2(1,:), out_rotated.Metatarsal2(2,:), bonestl_transformed.TibiaFibula, bonestl_transformed.Metatarsal2, "xy", side_indx, XY_viewer, -90);
+            end
+        end
     end
 
 
@@ -601,10 +679,45 @@ for col = 1:width(data)
             writematrix(values,xlfilename,'Sheet',ind_name,'Range','B1');
             blankCells = repmat("", length(A)+2, 2);
             writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', range);
-            try_index = 5;
+            break
         catch
             disp("Error attempting to write to Excel file, reattempting...")
-            continue
         end
     end
+
+    %% Save VICON Measurements
+    if vicon
+        VICON_Names = [
+            "VarValAngle",
+            "Calcaneal Pitch",
+            "1stRayPitch",
+            "HindfootProgression_relBiMal",
+            "ForefootProgression_relBiMal"
+            ];
+
+        vicon_fields = fieldnames(vicon_angles);
+        vicon_values = zeros(length(vicon_fields),1);
+        for i=1:length(vicon_fields)
+            vicon_values(i,1) = vicon_angles.(vicon_fields{i});
+        end
+
+        vicon_range = strcat('A',string(length(VICON_Names)+1),':B100');
+
+        for try_index = 1:5
+            try
+                xlfilename = strcat(folder_path,'Vicon_Radiograph_Measurements_', FolderName, '.xlsx');
+                writematrix(VICON_Names,xlfilename,'Sheet',ind_name);
+                writematrix(vicon_values,xlfilename,'Sheet',ind_name,'Range','B1');
+                blankCells = repmat("", length(VICON_Names)+2, 2);
+                writematrix(blankCells, xlfilename, 'Sheet', ind_name, 'Range', vicon_range);
+                break
+            catch
+                disp("Error attempting to write to VICON Excel file, reattempting...")
+            end
+        end
+    end
+end
+
+if ~isempty(skipped)
+    warndlg(cellstr(skipped), '3D FARM: subjects skipped');
 end
