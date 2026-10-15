@@ -14,34 +14,13 @@ clear, clc, close all
 % process. I recommend a file name similar to this for ease:
 % group_#_bone_laterality.stl (ex. ABC_01_Tibia_Right.stl)
 
-% Setup: Load Spreadsheet with bone File Names
-[filename, folder_path] = uigetfile('*.xlsx*', 'Please select your FARM sheet');
-if isequal(filename, 0)
-    error('No file selected.');
-end
-sheet_path = fullfile(folder_path, filename);
-
-% Get list of sheets
-sheets = sheetnames(sheet_path);
-
-% If there is more than one sheet, ask the user to select one
-if length(sheets) > 1
-    [sheet_idx, tf] = listdlg('PromptString', 'Select a sheet:', 'SelectionMode', 'single', 'ListString', sheets);
-    if ~tf
-        error('No sheet selected. Exiting.');
-    end
-    selected_sheet = sheets{sheet_idx};
-else
-    selected_sheet = sheets{1};
-end
-
-choice = questdlg('Are you troubleshooting alignment?', ...
-    'Troubleshoot?', 'Yes', 'No', 'No');
-trouble = strcmp(choice,'Yes');
-
-choice = questdlg('Also export VICON comparison measurements to a separate spreadsheet?', ...
-    'VICON?', 'Yes', 'No', 'No');
-vicon = strcmp(choice,'Yes');
+% Setup: Choose the Spreadsheet with bone File Names and any optional settings
+opts = farm_setup_dialog();
+folder_path = opts.folder_path;
+sheet_path = fullfile(folder_path, opts.filename);
+selected_sheet = opts.selected_sheet;
+trouble = opts.trouble;
+vicon = opts.vicon;
 
 data = readtable(sheet_path, 'ReadVariableNames', false, 'Sheet', selected_sheet);
 temp = strfind(folder_path,'\');
