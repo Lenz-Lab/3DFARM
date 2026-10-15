@@ -96,7 +96,7 @@ end
 angle = angle + offset;
 
 % ---------- Visualization (optional) ----------
-if ~isempty(bone1) && ~isempty(bone2)
+if ~isempty(bone1) && ~isempty(bone2) && farm_plots()
     figure('Color','w'); hold on
     p1 = patch('Faces',bone1.ConnectivityList,'Vertices',bone1.Points,...
         'FaceColor',[0.85 0.85 0.85], 'EdgeColor','none','FaceLighting','gouraud','AmbientStrength',0.15);

@@ -60,23 +60,7 @@ camPos = targetPoint + distance * crossVec_norm;
         quiver3(p0(1),p0(2),p0(3), u(1),u(2),u(3), 0, ...
             'LineWidth',2,'MaxHeadSize',0.5,'Color',col);
     end
-% Plot the bones
-figure('Color','w');
-hold on;
-plot_bone(bone1);
-plot_bone(bone2);
-plot_bone(bone3);
-plot_bone(bone4);
-% view(viewv);
-% Set camera properties:
-camtarget(targetPoint);   % The point the camera looks at
-campos(camPos);           % Position the camera along the cross product direction
-camlight HEADLIGHT;
-material dull;
-axis equal off;
-xlabel('x'); ylabel('y'); zlabel('z'); set(gca,'XTick',[],'YTick',[],'ZTick',[])
-% Plot the original talus point
-plot3(talus_point(:, 1), talus_point(:, 2), talus_point(:, 3), '.', 'MarkerSize', 30);
+% Original talus point and its projection onto the foot plane
 % compute vectors lying on triangluar foot plane
 v1 = endA - startB;
 v2 = endB - startB;
@@ -91,8 +75,6 @@ D = dot(normal_vector, startB);
 new_z = (D - normal_vector(1) * talus_point(1) - normal_vector(2) * talus_point(2)) / normal_vector(3);
 % Define the new point on the plane with the same x and y coordinates as talus point
 intersection_point = [talus_point(1), talus_point(2), new_z];
-% plot intersection point
-plot3(intersection_point(1), intersection_point(2), intersection_point(3), '.', 'MarkerSize', 30);
 % define bisecting line and direction
 end_C = (endA + endB) / 2;
 bisecting_direction = end_C - startB;
@@ -113,15 +95,8 @@ T = params(1);
 u = params(2);
 % Calculate the intersection point
 intersection_on_bisecting_line = startB + u * bisecting_direction;
-% Plot point
-plot3(intersection_on_bisecting_line(1), intersection_on_bisecting_line(2), intersection_on_bisecting_line(3),'.', 'MarkerSize', 30);
 % Calculate angle between the vectors
 angle = calculate_angle_between(startA, endA, startB, endB);
-% Plot vector arrows
-plot_arrow_quiver(startA, endA, [0 0 1]);
-plot_arrow_quiver(startB, endB, [1 0 0]);
-plot_arrow_quiver(startA, end_C, [0 1 0]);
-plot3(end_C(1), end_C(2), end_C(3),'.', 'MarkerSize', 30);
 % Calculate distances
 talus_distance = sqrt((intersection_point(1) - intersection_on_bisecting_line(1))^2 + ...
     (intersection_point(2) - intersection_on_bisecting_line(2))^2 + ...
@@ -138,7 +113,31 @@ end
 foot_distance = sqrt((end_C(1) - startA(1))^2 + (end_C(2) - startA(2))^2 + (end_C(3) - startA(3))^2);
 % Compute FTP
 FTP = (talus_distance / foot_distance)*100;
-% Title showing the computed value
-ttl = "FTP = " + sprintf('%.2f',FTP) + "%";
-title(ttl, 'Interpreter','none')
+
+% Plot the bones, points, and vectors
+if farm_plots()
+    figure('Color','w');
+    hold on;
+    plot_bone(bone1);
+    plot_bone(bone2);
+    plot_bone(bone3);
+    plot_bone(bone4);
+    % Set camera properties:
+    camtarget(targetPoint);   % The point the camera looks at
+    campos(camPos);           % Position the camera along the cross product direction
+    camlight HEADLIGHT;
+    material dull;
+    axis equal off;
+    xlabel('x'); ylabel('y'); zlabel('z'); set(gca,'XTick',[],'YTick',[],'ZTick',[])
+    plot3(talus_point(:, 1), talus_point(:, 2), talus_point(:, 3), '.', 'MarkerSize', 30);
+    plot3(intersection_point(1), intersection_point(2), intersection_point(3), '.', 'MarkerSize', 30);
+    plot3(intersection_on_bisecting_line(1), intersection_on_bisecting_line(2), intersection_on_bisecting_line(3),'.', 'MarkerSize', 30);
+    plot_arrow_quiver(startA, endA, [0 0 1]);
+    plot_arrow_quiver(startB, endB, [1 0 0]);
+    plot_arrow_quiver(startA, end_C, [0 1 0]);
+    plot3(end_C(1), end_C(2), end_C(3),'.', 'MarkerSize', 30);
+    % Title showing the computed value
+    ttl = "FTP = " + sprintf('%.2f',FTP) + "%";
+    title(ttl, 'Interpreter','none')
+end
 end

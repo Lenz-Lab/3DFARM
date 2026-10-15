@@ -20,6 +20,7 @@ folder_path = opts.folder_path;
 sheet_path = fullfile(folder_path, opts.filename);
 selected_sheet = opts.selected_sheet;
 trouble = opts.trouble;
+farm_plots(opts.plots);
 vicon = opts.vicon;
 
 data = readtable(sheet_path, 'ReadVariableNames', false, 'Sheet', selected_sheet);
@@ -512,7 +513,7 @@ for col = 1:width(data)
     end
 
     if ismember(8,all_bone_indx) % Distal Metatarsal Articular Angle
-        angles.DMAA = dmaa_calculator(bonestl_transformed.Metatarsal1, out_rotated.Metatarsal1, side_indx, 1);
+        angles.DMAA = dmaa_calculator(bonestl_transformed.Metatarsal1, out_rotated.Metatarsal1, side_indx, farm_plots());
     else
         angles.DMAA = NaN;
     end

@@ -27,7 +27,7 @@ This work is supported by the following grant:
 1. Clone or download this repository and open it in MATLAB.
 2. Run `Main_FARM.m`.
 3. In the setup window, click **Browse...** and select `Demo_Data/FARM_Example.xlsx`.
-4. Leave the optional boxes unchecked and click **Run**.
+4. Leave the options at their defaults and click **Run**.
 
 The measurements are written to `Demo_Data/Radiograph_Measurements_Demo_Data.xlsx`, with one sheet per subject.
 
@@ -75,12 +75,13 @@ The FARM sheet is an Excel file listing the bones for each subject, with one col
 
 ## Running
 
-Run `Main_FARM.m`. A setup window opens where you choose the FARM sheet (and worksheet) and any optional settings, then click **Run**. Both options are off by default:
+Run `Main_FARM.m`. A setup window opens where you choose the FARM sheet (and worksheet) and any optional settings, then click **Run**. The options are:
 
-* **Troubleshoot alignment**: you are shown the bones and asked which anatomical direction the highlighted regions face, and the automatic alignment starts from your answer. Use this if the measurement figures show a subject aligned incorrectly. When unchecked, the bones are aligned to the templates automatically.
-* **Export VICON measurements**: also writes the [VICON comparison measurements](#vicon-measurements-optional) to a separate spreadsheet.
+* **Show a figure for each measurement** (on by default): a figure opens for each measurement showing the bones, the axes or landmarks used, and the value, so you can check every result visually. Uncheck it to run without figures, for example on a large batch you have already checked.
+* **Troubleshoot alignment** (off by default): you are shown the bones and asked which anatomical direction the highlighted regions face, and the automatic alignment starts from your answer. Use this if the measurement figures show a subject aligned incorrectly. When unchecked, the bones are aligned to the templates automatically.
+* **Export VICON measurements** (off by default): also writes the [VICON comparison measurements](#vicon-measurements-optional) to a separate spreadsheet.
 
-Processing then runs subject by subject. A figure opens for each measurement showing the bones, the axes or landmarks used, and the value, so you can check every result visually.
+Processing then runs subject by subject.
 
 ## Output
 

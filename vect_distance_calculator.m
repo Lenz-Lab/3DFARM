@@ -47,7 +47,7 @@ else
 end
 
 % ------ Plotting ------
-if nargin >= 5 && ~isempty(bone1) && ~isempty(bone2)
+if nargin >= 5 && ~isempty(bone1) && ~isempty(bone2) && farm_plots()
     figure('Color','w'); hold on
 
     p1 = patch('Faces',bone1.ConnectivityList,'Vertices',bone1.Points,...
