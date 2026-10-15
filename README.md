@@ -78,10 +78,12 @@ The FARM sheet is an Excel file listing the bones for each subject, with one col
 Run `Main_FARM.m`. A setup window opens where you choose the FARM sheet (and worksheet) and any optional settings, then click **Run**. The options are:
 
 * **Show a figure for each measurement** (on by default): a figure opens for each measurement showing the bones, the axes or landmarks used, and the value, so you can check every result visually. Uncheck it to run without figures, for example on a large batch you have already checked.
-* **Troubleshoot alignment** (off by default): you are shown the bones and asked which anatomical direction the highlighted regions face, and the automatic alignment starts from your answer. Use this if the measurement figures show a subject aligned incorrectly. When unchecked, the bones are aligned to the templates automatically.
+* **Troubleshoot alignment** (off by default): you are shown the bones and asked which anatomical direction the highlighted regions face, and the automatic alignment starts from your answer. Use this if the measurement figures show a subject aligned incorrectly, or if a subject was skipped. When unchecked, the bones are aligned to the templates automatically.
 * **Export VICON measurements** (off by default): also writes the [VICON comparison measurements](#vicon-measurements-optional) to a separate spreadsheet.
 
 Processing then runs subject by subject.
+
+If the automatic alignment fails for a subject, which usually happens when the anatomy differs a lot from the templates, the subject is skipped and the run continues with the next one. The skipped subjects are listed in a window at the end; rerun them with **Troubleshoot alignment** checked. If a bone outside the talus, calcaneus, first metatarsal, and tibia can't be aligned, the subject is still measured, a warning is shown, and the measurements that use that bone are `NaN`.
 
 ## Output
 

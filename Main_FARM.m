@@ -47,6 +47,7 @@ list_side_folder = {'Right','_R.','_R_','_R ','_R\','_R','Left','_L.','_L_','_L 
 list_side = {'Right','Left'};
 
 %% Iterate through each person (column)
+skipped = strings(0,1); % messages for subjects that could not be measured
 for col = 1:width(data)
     % Clear variables for each person
     clear side_indx bone_metadata side_folder_indx all_bone_indx bonestl out angles vicon_angles ...
@@ -268,6 +269,37 @@ for col = 1:width(data)
             % Add filler for unused bones
             out.(AAFACT_bone) = [0 0 0];
         end
+    end
+
+    %% Check Alignment
+    % When the automatic alignment to the templates fails (usually because the
+    % anatomy differs a lot from the templates), a bone's coordinate system
+    % comes out as NaN. The talus, calcaneus, first metatarsal, and tibia define
+    % the reference frames, so the subject can't be measured without them.
+    ref_bones = intersect({'Talus', 'Calcaneus', 'Metatarsal1', 'Tibia'}, fieldnames(out), 'stable');
+    failed_ref = ref_bones(cellfun(@(b) any(isnan(out.(b)(1:6,:)), 'all'), ref_bones));
+    other_bones = setdiff(fieldnames(out), ref_bones, 'stable');
+    failed_other = other_bones(cellfun(@(b) any(isnan(out.(b)), 'all'), other_bones));
+
+    if ~isempty(failed_ref)
+        if trouble == 0
+            msg = sprintf(['%s was skipped: the %s coordinate system could not be found. This usually means the ' ...
+                'automatic alignment failed because the anatomy differs a lot from the templates (complex anatomy). ' ...
+                'We recommend rerunning this subject with "Troubleshoot alignment" checked.'], ...
+                ind_name, strjoin(strrep(failed_ref, '_', ' '), ', '));
+        else
+            msg = sprintf(['%s was skipped: the %s coordinate system could not be found, even with troubleshoot ' ...
+                'alignment. Check the bone files and the directions chosen during alignment.'], ...
+                ind_name, strjoin(strrep(failed_ref, '_', ' '), ', '));
+        end
+        warning('FARM:alignment', '%s', msg);
+        skipped(end+1,1) = string(msg); %#ok<SAGROW>
+        continue
+    end
+
+    if ~isempty(failed_other)
+        warning('FARM:alignment', '%s: the %s coordinate system could not be found, so measurements using it are NaN.', ...
+            ind_name, strjoin(strrep(failed_other, '_', ' '), ', '));
     end
 
     %% Transform View
@@ -684,4 +716,8 @@ for col = 1:width(data)
             end
         end
     end
+end
+
+if ~isempty(skipped)
+    warndlg(cellstr(skipped), '3D FARM: subjects skipped');
 end
