@@ -42,7 +42,10 @@ if isempty(RTs.red) == 0
     nodes_coords_final_i1 = ((RTs.yellow)\(nodes_coords_final_i1_red'))';
 end
 
-[nodes_coords_final_i1, ~] = center(nodes_coords_final_i1,1);
+% Center on the bone's own nodes (all but the last 26 coordinate system and
+% landmark rows), matching how cm_nodes was found, so a landmark that
+% couldn't be found (NaN) doesn't turn every output NaN
+nodes_coords_final_i1 = nodes_coords_final_i1 - mean(nodes_coords_final_i1(1:end-26,:), 1);
 
 nodes_coords_final = [nodes_coords_final_i1(:,1) + cm_nodes(1), nodes_coords_final_i1(:,2) + cm_nodes(2), nodes_coords_final_i1(:,3) + cm_nodes(3)];
 
