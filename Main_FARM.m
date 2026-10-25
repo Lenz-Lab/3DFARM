@@ -164,6 +164,20 @@ for col = 1:width(data)
 
     template_root = fullfile("Template_Bones","Anatomical_Bones", side_str);
 
+    % Small (e.g. pediatric) feet are scaled up to the template size so the
+    % alignment and coordinate systems behave as they do for adult feet.
+    % Angles and ratios don't change with scale; lengths are scaled back
+    % before saving.
+    size_scale = subject_scale(bonestl, template_root);
+    if size_scale ~= 1
+        fprintf('%s is smaller than the templates; scaling the bones by %.2f for the measurements (figures show the scaled bones).\n', ind_name, size_scale);
+        scaled_names = fieldnames(bonestl);
+        for i = 1:numel(scaled_names)
+            TRb = bonestl.(scaled_names{i});
+            bonestl.(scaled_names{i}) = triangulation(TRb.ConnectivityList, TRb.Points * size_scale);
+        end
+    end
+
     % Build combined SUBJECT tri
     allPts = [];
     allTri = [];
@@ -192,26 +206,25 @@ for col = 1:width(data)
     TR_subject_combined = center(TR_subject_combined,3);
 
     % Only bones with a full foot template (not phalanges/sesamoids) drive the
-    % alignment; the resulting transform is applied to every bone
-    fit_idx = [boneRanges([boneRanges.has_tpl]).v_idx];
+    % alignment; the resulting transform is applied to every bone. The tibia
+    % and fibula are left out when any foot bones are present: they're usually
+    % cropped well short of their templates, which can stand the whole foot up
+    % 90 degrees in the fit (seen on feet at or above the template size).
+    is_fit = [boneRanges.has_tpl] & ~ismember({boneRanges.name}, {'Tibia', 'Fibula'});
+    if ~any(is_fit)
+        is_fit = [boneRanges.has_tpl];
+    end
+    fit_idx = [boneRanges(is_fit).v_idx];
     if isempty(fit_idx)
         error('None of the input bones have a full foot template; include at least one tarsal or metatarsal.');
     end
 
-    % Build combined TEMPLATE tri
+    % Build combined TEMPLATE tri from the same bones
     allPtsT = [];
     allTriT = [];
 
-    for i = 1:numel(bone_inds_unique)
-        bidx = bone_inds_unique(i);
-        boneName = list_bone{bidx};
-
-        tpl_path = fullfile(template_root, boneName + ".stl");
-        if ~exist(tpl_path, 'file')
-            continue
-        end
-
-        TRt = stlread(tpl_path);
+    for i = find(is_fit)
+        TRt = stlread(fullfile(template_root, boneRanges(i).name + ".stl"));
         Vt  = TRt.Points;
         Ft  = TRt.ConnectivityList;
 
@@ -276,10 +289,12 @@ for col = 1:width(data)
     % anatomy differs a lot from the templates), a bone's coordinate system
     % comes out as NaN. The talus, calcaneus, first metatarsal, and tibia define
     % the reference frames, so the subject can't be measured without them.
+    % Only the coordinate system rows (1-6) are checked; a landmark that
+    % couldn't be found just leaves the measurements that use it NaN.
     ref_bones = intersect({'Talus', 'Calcaneus', 'Metatarsal1', 'Tibia'}, fieldnames(out), 'stable');
     failed_ref = ref_bones(cellfun(@(b) any(isnan(out.(b)(1:6,:)), 'all'), ref_bones));
     other_bones = setdiff(fieldnames(out), ref_bones, 'stable');
-    failed_other = other_bones(cellfun(@(b) any(isnan(out.(b)), 'all'), other_bones));
+    failed_other = other_bones(cellfun(@(b) any(isnan(out.(b)(1:min(6,end),:)), 'all'), other_bones));
 
     if ~isempty(failed_ref)
         if trouble == 0
@@ -399,6 +414,7 @@ for col = 1:width(data)
 
     if ismember(1,all_bone_indx) && ismember(2,all_bone_indx) && ismember(13,all_bone_indx) % Hindfoot Moment Arm
         [angles.HMA, Q, segPts] = vect_distance_calculator(out_tibiarotated.Tibia(1,:), out_tibiarotated.Tibia(4,:), out_tibiarotated.Calcaneus(7,:), bonestl_tibiatransformed.Tibia, bonestl_tibiatransformed.Calcaneus, "xz", side_indx, XZ_viewer);
+        angles.HMA = angles.HMA / size_scale; % back to the input bones' mm
     else
         angles.HMA = NaN;
     end
@@ -540,6 +556,7 @@ for col = 1:width(data)
     if ismember(17,all_bone_indx) && ismember(18,all_bone_indx) && ismember(8,all_bone_indx) % Sesamoid Medial-Lateral Displacement
         midpoint_ses = (med_ses_point + lat_ses_point) ./ 2;
         [angles.SMLD, ~, ~] = smld_calculator(out_rotated.Metatarsal1(1,:), out_rotated.Metatarsal1(2,:), midpoint_ses, bonestl_transformed.Sesamoids, bonestl_transformed.Metatarsal1, "xy", side_indx, XY_viewer);
+        angles.SMLD = angles.SMLD / size_scale; % back to the input bones' mm
     else
         angles.SMLD = NaN;
     end
